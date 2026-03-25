@@ -25,7 +25,7 @@ from accounts.forms import (
 from django.contrib.auth import authenticate, login as auth_login
 
 from accounts.models import Parent, Student, User
-from core.models import Semester, Session
+from core.models import Semester, Session, NewsAndEvents
 from course.models import Course, Program
 from result.models import TakenCourse
 

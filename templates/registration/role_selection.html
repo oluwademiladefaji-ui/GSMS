@@ -77,7 +77,7 @@
 
         <div class="grid-3">
             <!-- Student -->
-            <div class="role-card" onclick="window.location.href='{% if mode == 'signup' %}{% url 'register' %}?role=student{% else %}{% url 'welcome' %}?role=student{% endif %}'">
+            <div class="role-card" onclick="window.location.href='{% if mode == 'signup' %}{% url 'register' %}?role=student{% else %}{% url 'login' %}?role=student{% endif %}'">
                 <div class="role-icon icon-student"><i class="fas fa-user-graduate"></i></div>
                 <h3>Student</h3>
                 <p>Register for GS courses, take assessments, and view your results.</p>
@@ -85,7 +85,7 @@
             </div>
 
             <!-- Lecturer -->
-            <div class="role-card" onclick="window.location.href='{% if mode == 'signup' %}{% url 'register' %}?role=lecturer{% else %}{% url 'welcome' %}?role=lecturer{% endif %}'">
+            <div class="role-card" onclick="window.location.href='{% if mode == 'signup' %}{% url 'register' %}?role=lecturer{% else %}{% url 'login' %}?role=lecturer{% endif %}'">
                 <div class="role-icon icon-lecturer"><i class="fas fa-chalkboard-teacher"></i></div>
                 <h3>Lecturer</h3>
                 <p>Manage allocated courses, upload materials and grade student work.</p>
@@ -93,7 +93,7 @@
             </div>
 
             <!-- Admin -->
-            <div class="role-card" onclick="window.location.href='{% url 'welcome' %}?role=admin'">
+            <div class="role-card" onclick="window.location.href='{% url 'login' %}?role=admin'">
                 <div class="role-icon icon-admin"><i class="fas fa-user-shield"></i></div>
                 <h3>Admin</h3>
                 <p>Full system control, user approvals, and course allocations.</p>

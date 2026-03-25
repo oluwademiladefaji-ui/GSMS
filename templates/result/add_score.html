@@ -1,46 +1,50 @@
 {% extends 'base.html' %}
 {% load i18n %}
-{% block title %}{{ title }} | {% trans 'Learning management system' %}{% endblock title %}
-{% load static %}
+
+{% block title %}Manage Scores | GSMS{% endblock title %}
+{% block page_title %}Academic Grading{% endblock %}
+{% block nav_scores %}active{% endblock %}
 
 {% block content %}
 
-<nav style="--bs-breadcrumb-divider: '>';" aria-label="breadcrumb">
-    <ol class="breadcrumb">
-        <li class="breadcrumb-item"><a href="/">{% trans 'Home' %}</a></li>
-        <li class="breadcrumb-item active" aria-current="page">{% trans 'Manage Score' %}</li>
-    </ol>
-</nav>
-
-{% include 'snippets/messages.html' %}
-
-<div class="title-1 mb-3"><i class="fas fa-table"></i>{% trans 'Manage Score' %}</div>
-
-{% if current_semester %}
-<div class="row">
-    <div class="col-md-8">
-        <div class="card text-center">
-            <p class="form-title">
-                {{ current_semester }} {% trans 'Semester' %} - <i class="result-title">{{ current_session }}</i>
-            </p>
-            <div class="container">
-                <div class="dropdown">
-                    <button class="btn btn-primary dropdown-toggle mx-auto mb-2" type="button" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                        {% trans 'Select Your Course Here' %}
-                    </button>
-                    <div class="dropdown-menu">
-                        {% for course in courses %}
-                            <a class="dropdown-item" href="{% url 'add_score_for' course.id %}" title="{{ course.code }}">{{ course.title }}</a>
-                        {% empty %}
-                            <p class="dropdown-item">{% trans 'No course.' %}</p>
-                        {% endfor %}
-                    </div>
-                </div>
-                <p>{% trans 'To manage scores, please select the course using the button above.' %}</p>
+<div class="card mb-8">
+    <div class="card-body py-8">
+        <div class="flex items-center gap-4">
+            <div class="logo-icon" style="background:rgba(var(--primary-rgb), 0.1); color:var(--primary);">
+                <i class="fas fa-pencil-alt"></i>
+            </div>
+            <div>
+                <h2 style="font-size: 1.5rem; font-weight: 800; letter-spacing: -0.5px;">Select Course for Grading</h2>
+                <p class="text-muted">Currently active: <strong>{{ current_semester }} Semester</strong> ({{ current_session }})</p>
             </div>
         </div>
     </div>
 </div>
-{% endif %}
+
+<div class="grid-3">
+    {% for course in courses %}
+    <div class="card hover:border-primary transition-colors cursor-pointer" onclick="window.location.href='{% url 'add_score_for' course.id %}'">
+        <div class="card-body">
+            <div class="flex justify-between items-start mb-4">
+                <span class="badge badge-primary">{{ course.code }}</span>
+                <span class="text-xs text-muted font-bold uppercase">{{ course.credit }} Credits</span>
+            </div>
+            <h3 class="font-bold text-lg mb-2">{{ course.title }}</h3>
+            <p class="text-xs text-muted mb-6">Level: {{ course.level }}</p>
+            
+            <div class="pt-4 border-top flex justify-between items-center">
+                <span class="text-xs font-medium text-primary">Enter Scores</span>
+                <i class="fas fa-chevron-right text-xs text-muted"></i>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="card col-span-3 py-20 text-center">
+        <div class="logo-icon mx-auto opacity-10 mb-4"><i class="fas fa-book text-6xl"></i></div>
+        <h3 class="text-muted">No courses allocated to you for this semester.</h3>
+        <p class="text-sm text-muted mt-2">Please contact the administrator if this is an error.</p>
+    </div>
+    {% endfor %}
+</div>
 
 {% endblock content %}
