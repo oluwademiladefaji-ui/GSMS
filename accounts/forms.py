@@ -17,6 +17,14 @@ def fc(widget_type="text", extra=None):
 # ─── Signup Forms (no password, inactive until admin approves) ─────────────────
 
 class StaffSignupForm(forms.Form):
+    honorific  = forms.ChoiceField(
+        choices=[
+            ('', '-- Select --'), ('Dr.', 'Dr.'), ('Prof.', 'Prof.'),
+            ('Mr.', 'Mr.'), ('Mrs.', 'Mrs.'), ('Ms.', 'Ms.'),
+        ],
+        widget=forms.Select(attrs={"class": "form-select"}),
+        label=_("Honorific"), required=False,
+    )
     first_name = forms.CharField(max_length=50, widget=forms.TextInput(attrs=fc()), label=_("First Name"))
     last_name  = forms.CharField(max_length=50, widget=forms.TextInput(attrs=fc()), label=_("Last Name"))
     email      = forms.EmailField(widget=forms.TextInput(attrs=fc("email")), label=_("Email Address"))
@@ -36,6 +44,7 @@ class StaffSignupForm(forms.Form):
             phone         = data["phone"],
             address       = data["address"],
             gender        = data["gender"],
+            honorific     = data.get("honorific", ""),
             is_lecturer   = True,
             is_active     = False,
         )
@@ -45,14 +54,15 @@ class StaffSignupForm(forms.Form):
 
 
 class StudentSignupForm(forms.Form):
-    first_name = forms.CharField(max_length=50, widget=forms.TextInput(attrs=fc()), label=_("First Name"))
-    last_name  = forms.CharField(max_length=50, widget=forms.TextInput(attrs=fc()), label=_("Last Name"))
-    email      = forms.EmailField(widget=forms.TextInput(attrs=fc("email")), label=_("Email Address"))
-    phone      = forms.CharField(max_length=30, widget=forms.TextInput(attrs=fc()), label=_("Phone Number"))
-    address    = forms.CharField(max_length=100, widget=forms.TextInput(attrs=fc()), label=_("Address"))
-    gender     = forms.ChoiceField(choices=GENDERS, widget=forms.Select(attrs={"class": "form-select"}))
-    level      = forms.ChoiceField(choices=LEVEL, widget=forms.Select(attrs={"class": "form-select"}))
-    program    = forms.ModelChoiceField(
+    first_name    = forms.CharField(max_length=50, widget=forms.TextInput(attrs=fc()), label=_("First Name"))
+    last_name     = forms.CharField(max_length=50, widget=forms.TextInput(attrs=fc()), label=_("Last Name"))
+    email         = forms.EmailField(widget=forms.TextInput(attrs=fc("email")), label=_("Email Address"))
+    matric_number = forms.CharField(max_length=30, widget=forms.TextInput(attrs=fc()), label=_("Matric Number"))
+    phone         = forms.CharField(max_length=30, widget=forms.TextInput(attrs=fc()), label=_("Phone Number"))
+    address       = forms.CharField(max_length=100, widget=forms.TextInput(attrs=fc()), label=_("Address"))
+    gender        = forms.ChoiceField(choices=GENDERS, widget=forms.Select(attrs={"class": "form-select"}))
+    level         = forms.ChoiceField(choices=LEVEL, widget=forms.Select(attrs={"class": "form-select"}))
+    program       = forms.ModelChoiceField(
         queryset=Program.objects.all(),
         widget=forms.Select(attrs={"class": "form-select"}),
         label=_("Program"),
@@ -63,15 +73,16 @@ class StudentSignupForm(forms.Form):
         data  = self.cleaned_data
         email = data["email"]
         user  = User(
-            username   = email,
-            email      = email,
-            first_name = data["first_name"],
-            last_name  = data["last_name"],
-            phone      = data["phone"],
-            address    = data["address"],
-            gender     = data["gender"],
-            is_student = True,
-            is_active  = False,
+            username      = email,
+            email         = email,
+            first_name    = data["first_name"],
+            last_name     = data["last_name"],
+            phone         = data["phone"],
+            address       = data["address"],
+            gender        = data["gender"],
+            matric_number = data.get("matric_number", ""),
+            is_student    = True,
+            is_active     = False,
         )
         user.set_unusable_password()
         user.save()

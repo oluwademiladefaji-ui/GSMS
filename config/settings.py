@@ -64,7 +64,6 @@ PROJECT_APPS = [
     "result.apps.ResultConfig",
     "search.apps.SearchConfig",
     "quiz.apps.QuizConfig",
-    "payments.apps.PaymentsConfig",
 ]
 
 # Combine all apps
@@ -213,9 +212,6 @@ LOGIN_URL = "/accounts/welcome/"
 LOGIN_REDIRECT_URL = "/"
 LOGOUT_REDIRECT_URL = "/accounts/welcome/"
 
-# Strip payment config
-STRIPE_SECRET_KEY = config("STRIPE_SECRET_KEY", default="")
-STRIPE_PUBLISHABLE_KEY = config("STRIPE_PUBLISHABLE_KEY", default="")
 
 AUTHENTICATION_BACKENDS = [
     "django.contrib.auth.backends.ModelBackend",

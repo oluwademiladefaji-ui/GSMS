@@ -80,6 +80,9 @@ class User(AbstractUser):
     )
     email = models.EmailField(blank=True, null=True)
     passcode = models.CharField(max_length=20, blank=True, null=True)
+    # Phase 1 additions
+    matric_number = models.CharField(max_length=30, blank=True, null=True, unique=False, help_text=_("Student matric number"))
+    honorific = models.CharField(max_length=20, blank=True, null=True, help_text=_("e.g. Dr., Prof., Mr., Mrs."))
 
     username_validator = ASCIIUsernameValidator()
 
