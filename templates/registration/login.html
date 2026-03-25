@@ -1,70 +1,105 @@
-{% extends 'registration/registration_base.html' %}
-{% load i18n %}
-{% block title %}{% trans 'BU GEDS LMS' %}{% endblock title %}
-{% load crispy_forms_tags %}
-{% block content %}
+{% load static i18n %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login | GSMS — Babcock University</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'css/gsms.css' %}">
+    <style>
+        body {
+            background-color: #f8fafc;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+        .login-card {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 24px;
+            width: 100%;
+            max-width: 450px;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.08);
+            overflow: hidden;
+            animation: slideUp 0.4s ease-out;
+        }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .header-accent {
+            background: linear-gradient(135deg, #0f172a, #334155);
+            padding: 40px; text-align: center; color: white;
+        }
+        .header-accent.student  { background: linear-gradient(135deg, #1d4ed8, #3b82f6); }
+        .header-accent.lecturer { background: linear-gradient(135deg, #7c3aed, #8b5cf6); }
+        
+        .form-container { padding: 40px; }
+        .form-title { font-size: 1.5rem; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 8px; }
+        .form-desc { font-size: 0.875rem; color: #64748b; line-height: 1.5; margin-bottom: 24px; }
+    </style>
+</head>
+<body>
 
-<div class="col-md-4 mx-auto mt-5">
-  <div class="card">
-    <div class="form-title">
-      <i class="fas fa-lock me-2"></i>
-      {% trans 'Sign in' %}
-    </div>
-    <div class="card-body">
-        <form action="" method="POST" id="login-form">{% csrf_token %}
-          <div class="form-group mb-3">
-              <label class="mb-2" for="username_id"><i class="fas fa-address-card me-2"></i>{% trans 'ID Number' %}</label>
-              <input type="text" name="username" id="username_id" class="form-control" required>
-              <div id="message-wrapper"></div>
-          </div>
-          <div class="form-group mb-3">
-              <label class="mb-2" for="password_id"><i class="fas fa-key me-2"></i>{% trans 'Password' %}</label>
-              <input type="password" name="password" id="password_id" class="form-control" required>
-          </div>
-          {% if form.errors %}
-                <span class="text-danger"><i class="fas fa-exclamation-circle"></i> {% trans 'Invalid ID & Password.' %}</span><br>
-          {% endif %}
-      
-          <button type="submit" class="btn btn-primary" id="login-btn"><i class="fas fa-sign-in-alt"></i><small>{% trans 'SIGN IN' %}</small></button>
-        </form>
-        <br>
-        <div class="login-bottom">
-          <a href="{% url 'password_reset' %}" class="link">{% trans 'Forgot password ?' %}</a>
+    <div class="login-card">
+        <div class="header-accent {{ role }}">
+            <div class="logo-icon mx-auto mb-4" style="background:rgba(255,255,255,0.2); width:48px; height:48px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:1.25rem;"><i class="fas fa-{% if role == 'student' %}user-graduate{% elif role == 'lecturer' %}chalkboard-teacher{% else %}user-shield{% endif %}"></i></div>
+            <h2 class="mb-0 fw-bold">{{ role|title }} Login</h2>
         </div>
-      </div>
-  </div>
-</div>
-{% endblock content %}
 
-{% block js %}
+        <div class="form-container">
+            {% if messages %}
+                {% for message in messages %}
+                <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} mb-4">
+                    <i class="fas fa-info-circle mr-2"></i> {{ message }}
+                </div>
+                {% endfor %}
+            {% endif %}
 
-<script>
-  $('#login-form').submit(function (e) {
-    // e.preventDefault();
-    $('#login-btn').addClass('disabled')
-    $('#login-btn').html(`<i class="fas fa-sign-in-alt"></i> Signining you in . . .`)
-  })
+            {% if login_error %}
+                <div class="alert alert-danger mb-4">
+                    <i class="fas fa-exclamation-circle mr-2"></i> {{ login_error }}
+                </div>
+            {% endif %}
 
-  $("#username").on("input", function () {
-    username = $(this).val();
+            <form action="{% url 'custom_login' %}" method="POST">
+                {% csrf_token %}
+                <input type="hidden" name="role" value="{{ role }}">
 
-    $.ajax({
-      url: "/accounts/ajax/validate-username/",
-      data: {
-        username: username
-      },
-      dataType: 'json',
-      success: function (data) {
-        if (data.is_taken) {
-          console.log(data.is_taken);
-          $('#message-wrapper').html(`<p class="my-2 text-danger"><span class="bg-error p-2"><b>${username}</b> already taken :( try another one </span></p>`)
-        }
-        else {
-          $('#message-wrapper').html(`<p class="my-2 text-success"><span class="bg-correct p-2"><b>${username}</b> is valid </span></p>`)
-        }
-      }
+                {% if role == 'admin' %}
+                    <div class="form-group">
+                        <label class="form-label">Admin Username</label>
+                        <input type="text" name="username" class="form-control" placeholder="BUAdmin" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Password</label>
+                        <input type="password" name="password" class="form-control" placeholder="••••••••" required>
+                    </div>
+                {% else %}
+                    <div class="form-group">
+                        <label class="form-label">Full Name</label>
+                        <input type="text" name="full_name" class="form-control" placeholder="Enter your full name" required>
+                        <p class="form-hint">Case-sensitive. Exactly as registered.</p>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Passcode</label>
+                        <input type="password" name="passcode" class="form-control" placeholder="6-digit passcode" required>
+                        <p class="form-hint">Case-sensitive. Provided by Admin.</p>
+                    </div>
+                {% endif %}
 
-    })
-  })
-</script>
-{% endblock %}
+                <button type="submit" class="btn btn-primary w-full btn-lg mt-4">
+                    <i class="fas fa-sign-in-alt mr-2"></i> Log In
+                </button>
+            </form>
+
+            <div class="text-center mt-8">
+                <a href="{% url 'role_selection' %}?mode=login" class="btn btn-ghost"><i class="fas fa-arrow-left mr-2"></i> Change role</a>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>

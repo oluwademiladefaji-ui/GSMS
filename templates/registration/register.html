@@ -1,92 +1,149 @@
-{% extends 'registration/registration_base.html' %}
-{% load i18n crispy_forms_tags %}
-{% block title %}{% trans 'Register | GSMS' %}{% endblock title %}
+{% load static i18n %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registration | GSMS — Babcock University</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'css/gsms.css' %}">
+    <style>
+        body {
+            background-color: #f8fafc;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+        .register-card {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 24px;
+            width: 100%;
+            max-width: 550px;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.08);
+            overflow: hidden;
+            animation: slideUp 0.4s ease-out;
+        }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .header-accent {
+            background: linear-gradient(135deg, #1d4ed8, #3b82f6);
+            padding: 40px; text-align: center; color: white;
+        }
+        .header-accent.lecturer { background: linear-gradient(135deg, #7c3aed, #8b5cf6); }
+        .form-container { padding: 40px; }
+        
+        .form-title { font-size: 1.5rem; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 8px; }
+        .form-desc { font-size: 0.875rem; color: #64748b; line-height: 1.5; margin-bottom: 24px; }
+    </style>
+</head>
+<body>
 
-{% block content %}
-<div class="container py-5">
-    <div class="row justify-content-center">
-        <div class="col-lg-8">
-            <!-- Messages -->
+    <div class="register-card">
+        <div class="header-accent {% if active_tab == 'lecturer' %}lecturer{% endif %}">
+            <div class="logo-icon mx-auto mb-4" style="background:rgba(255,255,255,0.2); width:48px; height:48px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:1.25rem;"><i class="fas fa-{% if active_tab == 'student' %}user-graduate{% else %}chalkboard-teacher{% endif %}"></i></div>
+            <h2 class="mb-0 fw-bold">{% if active_tab == 'student' %}Student{% else %}Lecturer{% endif %} Account Request</h2>
+        </div>
+
+        <div class="form-container">
             {% if messages %}
                 {% for message in messages %}
-                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show shadow-sm" role="alert">
-                        {{ message }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                    </div>
+                <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} mb-4">
+                    <i class="fas fa-info-circle mr-2"></i> {{ message }}
+                </div>
                 {% endfor %}
             {% endif %}
 
-            <div class="card shadow-lg border-0 rounded-4 overflow-hidden">
-                <div class="card-header bg-gradient-primary text-white text-center py-4" style="background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);">
-                    <h2 class="mb-0 fw-bold"><i class="fas fa-user-plus me-2"></i>{% trans 'Request an Account' %}</h2>
-                    <p class="text-light mb-0 mt-2">{% trans 'Sign up below. An administrator will review your details and issue a unique passcode for login.' %}</p>
-                </div>
+            <div class="form-desc text-center">
+                Submit the form below. An administrator will review your application and issue a unique passcode for login via the welcome page.
+            </div>
+
+            <form action="{% url 'register' %}" method="POST">
+                {% csrf_token %}
+                <input type="hidden" name="role" value="{{ active_tab }}">
                 
-                <div class="card-body p-4 p-md-5 bg-light">
-                    <!-- Navigation Tabs -->
-                    <ul class="nav nav-pills nav-justified mb-4 border rounded-pill p-1 bg-white shadow-sm" id="pills-tab" role="tablist">
-                      <li class="nav-item" role="presentation">
-                        <button class="nav-link rounded-pill fw-bold {% if active_tab == 'student' %}active{% endif %}" id="pills-student-tab" data-bs-toggle="pill" data-bs-target="#pills-student" type="button" role="tab">
-                            <i class="fas fa-user-graduate me-1"></i> {% trans 'I am a Student' %}
-                        </button>
-                      </li>
-                      <li class="nav-item" role="presentation">
-                        <button class="nav-link rounded-pill fw-bold {% if active_tab == 'lecturer' %}active{% endif %}" id="pills-lecturer-tab" data-bs-toggle="pill" data-bs-target="#pills-lecturer" type="button" role="tab">
-                            <i class="fas fa-chalkboard-teacher me-1"></i> {% trans 'I am a Lecturer' %}
-                        </button>
-                      </li>
-                    </ul>
-
-                    <div class="tab-content" id="pills-tabContent">
-                      <!-- STUDENT TAB -->
-                      <div class="tab-pane fade {% if active_tab == 'student' %}show active{% endif %}" id="pills-student" role="tabpanel">
-                        <form action="{% url 'register' %}" method="POST" class="needs-validation">
-                            {% csrf_token %}
-                            <input type="hidden" name="role" value="student">
-                            
-                            <div class="bg-white p-4 rounded-4 shadow-sm border mb-4">
-                                <h5 class="text-primary mb-3 border-bottom pb-2">{% trans 'Student Details' %}</h5>
-                                <div class="row g-3">
-                                    {{ student_form|crispy }}
-                                </div>
-                            </div>
-                            
-                            <button class="btn btn-primary btn-lg w-100 py-3 rounded-pill shadow" type="submit">
-                                <i class="fas fa-paper-plane me-2"></i>{% trans 'Submit Student Application' %}
-                            </button>
-                        </form>
-                      </div>
-
-                      <!-- LECTURER TAB -->
-                      <div class="tab-pane fade {% if active_tab == 'lecturer' %}show active{% endif %}" id="pills-lecturer" role="tabpanel">
-                        <form action="{% url 'register' %}" method="POST" class="needs-validation">
-                            {% csrf_token %}
-                            <input type="hidden" name="role" value="lecturer">
-                            
-                            <div class="bg-white p-4 rounded-4 shadow-sm border mb-4">
-                                <h5 class="text-primary mb-3 border-bottom pb-2">{% trans 'Lecturer Details' %}</h5>
-                                <div class="row g-3">
-                                    {{ staff_form|crispy }}
-                                </div>
-                            </div>
-                            
-                            <button class="btn btn-primary btn-lg w-100 py-3 rounded-pill shadow" type="submit">
-                                <i class="fas fa-paper-plane me-2"></i>{% trans 'Submit Lecturer Application' %}
-                            </button>
-                        </form>
-                      </div>
+                {% if active_tab == 'student' %}
+                    <!-- Student Specific Form -->
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">First Name</label>
+                            {{ student_form.first_name }}
+                            {% if student_form.first_name.errors %}<div class="form-error">{{ student_form.first_name.errors }}</div>{% endif %}
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Last Name</label>
+                            {{ student_form.last_name }}
+                            {% if student_form.last_name.errors %}<div class="form-error">{{ student_form.last_name.errors }}</div>{% endif %}
+                        </div>
                     </div>
-
-                    <div class="text-center mt-5">
-                        <p class="text-muted mb-2">{% trans 'Already approved and received your passcode?' %}</p>
-                        <a href="{% url 'login' %}" class="btn btn-outline-primary rounded-pill px-5 fw-bold">
-                            <i class="fas fa-sign-in-alt me-1"></i> {% trans 'Log In Here' %}
-                        </a>
+                    <div class="form-group">
+                        <label class="form-label">Email Address</label>
+                        {{ student_form.email }}
+                        {% if student_form.email.errors %}<div class="form-error">{{ student_form.email.errors }}</div>{% endif %}
                     </div>
-                </div>
+                    <div class="form-group">
+                        <label class="form-label">Matric Number</label>
+                        {{ student_form.matric_number }}
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Level</label>
+                            {{ student_form.level }}
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Gender</label>
+                            {{ student_form.gender }}
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Program</label>
+                        {{ student_form.program }}
+                    </div>
+                {% else %}
+                    <!-- Lecturer Specific Form -->
+                     <div class="form-group">
+                        <label class="form-label">Honorific</label>
+                        {{ staff_form.honorific }}
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">First Name</label>
+                            {{ staff_form.first_name }}
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Last Name</label>
+                            {{ staff_form.last_name }}
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Email Address</label>
+                        {{ staff_form.email }}
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Phone</label>
+                            {{ staff_form.phone }}
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Gender</label>
+                            {{ staff_form.gender }}
+                        </div>
+                    </div>
+                {% endif %}
+
+                <button type="submit" class="btn btn-primary w-full btn-lg mt-4">
+                    <i class="fas fa-paper-plane mr-2"></i> Submit Application
+                </button>
+            </form>
+
+            <div class="text-center mt-8">
+                <a href="{% url 'role_selection' %}" class="btn btn-ghost"><i class="fas fa-arrow-left mr-2"></i> Change role</a>
             </div>
         </div>
     </div>
-</div>
 
-{% endblock content %}
+</body>
+</html>

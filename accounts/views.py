@@ -51,15 +51,34 @@ def render_to_pdf(template_name, context):
 
 
 def welcome(request):
-    """Stunning landing page with role selection."""
+    """Universal landing page with branding and News/Events."""
     if request.user.is_authenticated:
         return redirect("/")
+    
+    news_items = NewsAndEvents.objects.all().order_by("-updated_date")[:6]
     context = {
-        "programs": Program.objects.all(),
-        "active_role": request.GET.get("role", ""),
-        "login_error": request.session.pop("login_error", None),
+        "news_items": news_items,
     }
     return render(request, "registration/welcome.html", context)
+
+
+def role_selection(request):
+    """Middleman to choose user role."""
+    if request.user.is_authenticated:
+        return redirect("/")
+    return render(request, "registration/role_selection.html", {"mode": request.GET.get("mode", "login")})
+
+
+def login_view(request):
+    """Dedicated login page for a specific role."""
+    if request.user.is_authenticated:
+        return redirect("/")
+    
+    context = {
+        "role": request.GET.get("role", "student"),
+        "login_error": request.session.pop("login_error", None),
+    }
+    return render(request, "registration/login.html", context)
 
 
 def custom_login(request):
@@ -79,7 +98,7 @@ def custom_login(request):
             auth_login(request, user)
             return redirect("/")
         request.session["login_error"] = "Invalid admin credentials."
-        return redirect(f"/accounts/welcome/?role=admin")
+        return redirect(f"/accounts/login/?role=admin")
 
     # Student / Lecturer: full name (case-sensitive) + passcode
     full_name = request.POST.get("full_name", "").strip()   # exact case required
@@ -102,8 +121,8 @@ def custom_login(request):
         auth_login(request, user)
         return redirect("/")
 
-    request.session["login_error"] = "Invalid name or passcode. Both are case-sensitive."
-    return redirect(f"/accounts/welcome/?role={role}")
+    request.session["login_error"] = "Invalid credentials. Both name and passcode are case-sensitive."
+    return redirect(f"/accounts/login/?role={role}")
 
 
 def validate_username(request):
@@ -113,31 +132,37 @@ def validate_username(request):
 
 
 def register(request):
+    """Refined registration view that handles role-specific signups."""
     if request.method == "POST":
         role = request.POST.get("role", "student")
         if role == "student":
             form = StudentSignupForm(request.POST)
+            staff_form = StaffSignupForm()
+            student_form = form
         else:
             form = StaffSignupForm(request.POST)
+            student_form = StudentSignupForm()
+            staff_form = form
         
         if form.is_valid():
             form.save()
-            messages.success(request, "Registration successful! Your account is pending admin approval.")
-            return redirect("login")
+            messages.success(request, "Registration successful! Your account is pending admin approval. You will receive a passcode once approved.")
+            return redirect("welcome")
         else:
             messages.error(request, "Please correct the errors below.")
             return render(request, "registration/register.html", {
-                "student_form": StudentSignupForm(request.POST) if role == "student" else StudentSignupForm(),
-                "staff_form": StaffSignupForm(request.POST) if role == "lecturer" else StaffSignupForm(),
+                "student_form": student_form,
+                "staff_form": staff_form,
                 "active_tab": role
             })
     else:
+        role = request.GET.get("role", "student")
         student_form = StudentSignupForm()
         staff_form = StaffSignupForm()
     return render(request, "registration/register.html", {
         "student_form": student_form,
         "staff_form": staff_form,
-        "active_tab": "student"
+        "active_tab": role
     })
 
 @login_required

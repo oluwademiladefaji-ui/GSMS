@@ -13,23 +13,38 @@ from .models import NewsAndEvents, ActivityLog, Session, Semester
 # ########################################################
 @login_required
 def home_view(request):
+    """Unified entry point. Redirects to appropriate role dashboard."""
+    if request.user.is_superuser:
+        return redirect("dashboard")
+    elif request.user.is_lecturer:
+        # Redirect or render lecturer dashboard
+        return render(request, "core/lecturer_dashboard.html", {"title": "Lecturer Dashboard"})
+    elif request.user.is_student:
+        # Redirect or render student dashboard
+        return render(request, "core/student_dashboard.html", {"title": "Student Dashboard"})
+    
+    # Fallback to news feed if no specific role
     items = NewsAndEvents.objects.all().order_by("-updated_date")
-    context = {
-        "title": "News & Events",
-        "items": items,
-    }
-    return render(request, "core/index.html", context)
+    return render(request, "core/index.html", {"title": "News & Events", "items": items})
 
 
 @login_required
 @admin_required
 def dashboard_view(request):
+    """Admin Command Center with high-level analytics."""
     logs = ActivityLog.objects.all().order_by("-created_at")[:10]
     gender_count = Student.get_gender_count()
+    
+    # Get counts
+    student_count = User.objects.filter(is_student=True, is_active=True).count()
+    lecturer_count = User.objects.filter(is_lecturer=True, is_active=True).count()
+    pending_count = User.objects.filter(is_active=False).count()
+    
     context = {
-        "student_count": User.objects.get_student_count(),
-        "lecturer_count": User.objects.get_lecturer_count(),
-        "superuser_count": User.objects.get_superuser_count(),
+        "title": "Admin Dashboard",
+        "student_count": student_count,
+        "lecturer_count": lecturer_count,
+        "pending_count": pending_count,
         "males_count": gender_count["M"],
         "females_count": gender_count["F"],
         "logs": logs,

@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Lecturer Dashboard | GSMS{% endblock %}
+{% block page_title %}Lecturer Hub{% endblock %}
+{% block nav_dashboard_l %}active{% endblock %}
+
+{% block content %}
+
+<!-- Header Stats -->
+<div class="grid-3">
+    <div class="card card-stat">
+        <div class="card-stat-title">My Courses</div>
+        <div class="card-stat-value">{% if request.user.lecturer %}...{% else %}1{% endif %}</div>
+        <div class="card-stat-desc">Allocated teaching workload</div>
+    </div>
+    <div class="card card-stat">
+        <div class="card-stat-title">Staff ID</div>
+        <div class="card-stat-value" style="font-size:1.5rem">ID: {{ request.user.id }}</div>
+        <div class="card-stat-desc">Your unique identifier</div>
+    </div>
+    <div class="card card-stat">
+        <div class="card-stat-title">Role Approval</div>
+        <div class="card-stat-value text-success">Verified</div>
+        <div class="card-stat-desc">Academic access active</div>
+    </div>
+</div>
+
+<div class="mt-8 flex gap-6 flex-wrap">
+    
+    <!-- Teaching Quick Actions -->
+    <div class="card flex-1 min-w-[300px]">
+        <div class="card-header">
+            <h3 class="card-title"><i class="fas fa-chalkboard mr-2 text-primary"></i> Classroom Tools</h3>
+        </div>
+        <div class="card-body">
+            <div class="flex flex-col gap-3">
+                <a href="{% url 'user_course_list' %}" class="btn btn-outline w-full justify-start py-4">
+                    <i class="fas fa-book-open mr-3 text-xl"></i> My Allocated Courses
+                </a>
+                <a href="{% url 'add_score' %}" class="btn btn-outline w-full justify-start py-4">
+                    <i class="fas fa-pencil-alt mr-3 text-xl"></i> Enter Student Grades
+                </a>
+                <a href="#" class="btn btn-outline w-full justify-start py-4 opacity-50 cursor-not-allowed">
+                    <i class="fas fa-file-upload mr-3 text-xl"></i> Upload Course Materials
+                </a>
+                <a href="#" class="btn btn-outline w-full justify-start py-4 opacity-50 cursor-not-allowed">
+                    <i class="fas fa-question-circle mr-3 text-xl"></i> Manage Quizzes
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Active Class Feed -->
+    <div class="card" style="flex: 2; min-width: 400px;">
+        <div class="card-header">
+            <h3 class="card-title"><i class="fas fa-users mr-2 text-primary"></i> Teaching Statistics</h3>
+        </div>
+        <div class="card-body py-12 flex flex-col items-center justify-center font-medium">
+            <div class="logo-icon mb-4" style="background:var(--secondary); color:white;"><i class="fas fa-chart-pie text-3xl"></i></div>
+            <p class="text-muted">Class demographics and grading analytics will appear here after course allocation.</p>
+        </div>
+    </div>
+
+</div>
+
+{% endblock %}
