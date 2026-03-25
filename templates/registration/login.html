@@ -1,248 +1,204 @@
-{% extends 'base/public_base.html' %}
-{% load static %}
-{% load crispy_forms_tags %}
+{% load static i18n %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>
+        {% if role == 'admin' %}Administrator{% elif role == 'lecturer' %}Lecturer{% else %}Student{% endif %}
+        Login | GSMS — Babcock University
+    </title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'css/gsms.css' %}">
+    <style>
+        body { background:#f8fafc; min-height:100vh; display:flex; align-items:center; justify-content:center; padding:2rem 1rem; }
+        .login-wrap { width:100%; max-width:460px; animation: fadeUp 0.35s ease-out; }
+        @keyframes fadeUp { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:translateY(0); } }
 
-{% block title %}Login - Babcock University GSMS{% endblock %}
+        .role-pill {
+            display: inline-flex; align-items: center; gap: 8px;
+            padding: 6px 18px; border-radius: 999px; font-size: 0.78rem;
+            font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 16px;
+        }
+        .pill-admin    { background:#fff1f2; color:#dc2626; border:1px solid #fecaca; }
+        .pill-lecturer { background:#f5f3ff; color:#7c3aed; border:1px solid #ddd6fe; }
+        .pill-student  { background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; }
 
-{% block extra_css %}
-<style>
-    .login-container {
-        min-height: 80vh;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 50px 0;
-    }
-    
-    .login-box {
-        background: white;
-        border-radius: 15px;
-        padding: 40px;
-        box-shadow: 0 10px 40px rgba(0,0,0,0.1);
-        max-width: 500px;
-        width: 100%;
-    }
-    
-    .login-header {
-        text-align: center;
-        margin-bottom: 30px;
-    }
-    
-    .login-header .role-icon {
-        width: 80px;
-        height: 80px;
-        margin: 0 auto 20px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 2.5rem;
-    }
-    
-    .role-admin .role-icon {
-        background: rgba(220, 53, 69, 0.1);
-        color: #dc3545;
-    }
-    
-    .role-lecturer .role-icon {
-        background: rgba(40, 167, 69, 0.1);
-        color: #28a745;
-    }
-    
-    .role-student .role-icon {
-        background: rgba(23, 162, 184, 0.1);
-        color: #17a2b8;
-    }
-    
-    .login-header h2 {
-        color: #1a5490;
-        font-weight: 700;
-        margin-bottom: 10px;
-    }
-    
-    .login-header p {
-        color: #6c757d;
-        margin: 0;
-    }
-    
-    .form-label {
-        font-weight: 600;
-        color: #495057;
-    }
-    
-    .form-control {
-        padding: 12px;
-        border-radius: 8px;
-        border: 1px solid #dee2e6;
-    }
-    
-    .form-control:focus {
-        border-color: #1a5490;
-        box-shadow: 0 0 0 0.2rem rgba(26, 84, 144, 0.25);
-    }
-    
-    .btn-login {
-        width: 100%;
-        padding: 12px;
-        font-size: 1.1rem;
-        font-weight: 600;
-        border-radius: 8px;
-        margin-top: 20px;
-    }
-    
-    .help-text {
-        text-align: center;
-        margin-top: 20px;
-        padding-top: 20px;
-        border-top: 1px solid #dee2e6;
-    }
-    
-    .help-text a {
-        color: #1a5490;
-        text-decoration: none;
-    }
-    
-    .help-text a:hover {
-        text-decoration: underline;
-    }
-    
-    .info-box {
-        background: #e3f2fd;
-        border-left: 4px solid #1976d2;
-        padding: 15px;
-        border-radius: 5px;
-        margin-bottom: 20px;
-    }
-    
-    .info-box i {
-        color: #1976d2;
-    }
-</style>
-{% endblock %}
+        .btn-admin    { background:#dc2626 !important; }
+        .btn-lecturer { background:#7c3aed !important; }
+        .btn-student  { background:#1d4ed8 !important; }
 
-{% block page_content %}
-<div class="login-container">
-    <div class="container">
-        <div class="login-box">
-            {% if role == 'admin' %}
-            <div class="login-header role-admin">
-                <div class="role-icon">
-                    <i class="fas fa-user-shield"></i>
-                </div>
-                <h2>Administrator Login</h2>
-                <p>System Management Access</p>
-            </div>
-            
-            <form method="post" action="{% url 'custom_login' %}">
+        .info-card {
+            border-radius: 12px; padding: 16px 18px; margin-bottom: 20px;
+            font-size: 0.82rem; line-height: 1.9;
+        }
+        .info-card.admin    { background:#fff1f2; border:1px solid #fecaca; color:#7f1d1d; }
+        .info-card.lecturer { background:#f5f3ff; border:1px solid #ddd6fe; color:#4c1d95; }
+        .info-card.student  { background:#eff6ff; border:1px solid #bfdbfe; color:#1e3a8a; }
+        .info-card strong   { display: block; font-size: 0.85rem; margin-bottom: 6px; }
+    </style>
+</head>
+<body>
+<div class="login-wrap">
+
+    <!-- Back + Branding -->
+    <div class="text-center mb-6">
+        <a href="{% url 'role_selection' %}?mode=login" class="btn btn-ghost btn-sm mb-4">
+            <i class="fas fa-arrow-left mr-2"></i> Change Role
+        </a>
+        <div style="width:50px;height:50px;background:#1d4ed8;border-radius:13px;display:inline-flex;align-items:center;justify-content:center;margin-bottom:14px;">
+            <i class="fas fa-university" style="color:white;font-size:1.3rem;"></i>
+        </div>
+
+        <div>
+            <span class="role-pill pill-{{ role }}">
+                <i class="fas fa-{% if role == 'admin' %}user-shield{% elif role == 'lecturer' %}chalkboard-teacher{% else %}user-graduate{% endif %}"></i>
+                {{ role|title }} Portal
+            </span>
+        </div>
+        <h1 style="font-size:1.7rem;font-weight:800;letter-spacing:-0.5px;">Sign In</h1>
+        <p class="text-muted text-sm">Babcock University — GSMS</p>
+    </div>
+
+    <!-- Flash Messages -->
+    {% if messages %}
+    {% for message in messages %}
+    <div class="alert alert-{% if 'error' in message.tags %}danger{% else %}success{% endif %} mb-4" style="border-radius:10px;">
+        <i class="fas fa-{% if 'error' in message.tags %}exclamation-circle{% else %}check-circle{% endif %} mr-2"></i>
+        {{ message }}
+    </div>
+    {% endfor %}
+    {% endif %}
+
+    {% if login_error %}
+    <div class="alert alert-danger mb-4" style="border-radius:10px;">
+        <i class="fas fa-exclamation-circle mr-2"></i> {{ login_error }}
+    </div>
+    {% endif %}
+
+    {% if role == 'admin' %}
+    <!-- ═══════════════════════════════════════════════
+         ADMIN LOGIN — Credentials Only
+         ═══════════════════════════════════════════════ -->
+    <div class="info-card admin">
+        <strong><i class="fas fa-shield-halved mr-1"></i> Administrator Access Only</strong>
+        This page is restricted to the GSMS system administrator.<br>
+        Enter your admin username and password to proceed.<br>
+        If you are a student or lecturer, please <a href="{% url 'role_selection' %}?mode=login" style="color:#dc2626;font-weight:600;">go back and select your role</a>.
+    </div>
+
+    <div class="card">
+        <div class="card-body" style="padding:2rem;">
+            <form method="POST" action="{% url 'custom_login' %}">
                 {% csrf_token %}
                 <input type="hidden" name="role" value="admin">
-                
-                <div class="mb-3">
-                    <label for="username" class="form-label">Username</label>
-                    <input type="text" class="form-control" id="username" name="username" 
-                           placeholder="Enter admin username" required autofocus>
+
+                <div class="form-group">
+                    <label class="form-label">Admin Username</label>
+                    <input type="text" name="username" id="username" class="form-control" style="font-size:1rem;padding:12px;" placeholder="Enter username" autofocus required>
                 </div>
-                
-                <div class="mb-3">
-                    <label for="password" class="form-label">Password</label>
-                    <input type="password" class="form-control" id="password" name="password" 
-                           placeholder="Enter password" required>
+                <div class="form-group">
+                    <label class="form-label">Password</label>
+                    <div style="position:relative;">
+                        <input type="password" name="password" id="password" class="form-control" style="font-size:1rem;padding:12px;padding-right:44px;" placeholder="Enter password" required>
+                        <button type="button" onclick="togglePwd()" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#64748b;">
+                            <i class="fas fa-eye" id="eye-icon"></i>
+                        </button>
+                    </div>
                 </div>
-                
-                <button type="submit" class="btn btn-danger btn-login">
-                    <i class="fas fa-sign-in-alt me-2"></i>Login as Admin
+
+                <button type="submit" class="btn btn-admin w-full" style="padding:13px;font-size:1rem;font-weight:700;border:none;color:white;border-radius:10px;margin-top:8px;">
+                    <i class="fas fa-sign-in-alt mr-2"></i> Login as Administrator
                 </button>
             </form>
-            
-            {% elif role == 'lecturer' %}
-            <div class="login-header role-lecturer">
-                <div class="role-icon">
-                    <i class="fas fa-chalkboard-teacher"></i>
-                </div>
-                <h2>Lecturer Login</h2>
-                <p>Teaching & Assessment Portal</p>
-            </div>
-            
-            <div class="info-box">
-                <i class="fas fa-info-circle me-2"></i>
-                <small>Use your <strong>full name</strong> (case-sensitive) and the <strong>passcode</strong> provided by admin.</small>
-            </div>
-            
-            <form method="post" action="{% url 'custom_login' %}">
-                {% csrf_token %}
-                <input type="hidden" name="role" value="lecturer">
-                
-                <div class="mb-3">
-                    <label for="full_name" class="form-label">Full Name</label>
-                    <input type="text" class="form-control" id="full_name" name="full_name" 
-                           placeholder="Enter your full name (case-sensitive)" required autofocus>
-                    <small class="text-muted">Example: John Doe</small>
-                </div>
-                
-                <div class="mb-3">
-                    <label for="passcode" class="form-label">Passcode</label>
-                    <input type="password" class="form-control" id="passcode" name="passcode" 
-                           placeholder="Enter your passcode" required>
-                    <small class="text-muted">6-character code provided by admin</small>
-                </div>
-                
-                <button type="submit" class="btn btn-success btn-login">
-                    <i class="fas fa-sign-in-alt me-2"></i>Login as Lecturer
-                </button>
-            </form>
-            
-            {% elif role == 'student' %}
-            <div class="login-header role-student">
-                <div class="role-icon">
-                    <i class="fas fa-user-graduate"></i>
-                </div>
-                <h2>Student Login</h2>
-                <p>Learning & Courses Portal</p>
-            </div>
-            
-            <div class="info-box">
-                <i class="fas fa-info-circle me-2"></i>
-                <small>Use your <strong>full name</strong> (case-sensitive) and the <strong>passcode</strong> provided by admin.</small>
-            </div>
-            
-            <form method="post" action="{% url 'custom_login' %}">
-                {% csrf_token %}
-                <input type="hidden" name="role" value="student">
-                
-                <div class="mb-3">
-                    <label for="full_name" class="form-label">Full Name</label>
-                    <input type="text" class="form-control" id="full_name" name="full_name" 
-                           placeholder="Enter your full name (case-sensitive)" required autofocus>
-                    <small class="text-muted">Example: Jane Smith</small>
-                </div>
-                
-                <div class="mb-3">
-                    <label for="passcode" class="form-label">Passcode</label>
-                    <input type="password" class="form-control" id="passcode" name="passcode" 
-                           placeholder="Enter your passcode" required>
-                    <small class="text-muted">6-character code provided by admin</small>
-                </div>
-                
-                <button type="submit" class="btn btn-info btn-login">
-                    <i class="fas fa-sign-in-alt me-2"></i>Login as Student
-                </button>
-            </form>
-            
-            {% endif %}
-            
-            <div class="help-text">
-                <p class="text-muted mb-2">
-                    {% if role == 'admin' %}
-                        Not an admin? <a href="{% url 'role_selection' %}?mode=login">Choose different role</a>
-                    {% else %}
-                        Don't have an account? <a href="{% url 'register' %}?role={{ role }}">Sign up here</a>
-                    {% endif %}
-                </p>
-                <p class="text-muted">
-                    <a href="{% url 'role_selection' %}?mode=login"><i class="fas fa-arrow-left me-1"></i>Back to role selection</a>
-                </p>
-            </div>
         </div>
     </div>
+
+    {% elif role == 'lecturer' %}
+    <!-- ═══════════════════════════════════════════════
+         LECTURER LOGIN — Name + Passcode
+         ═══════════════════════════════════════════════ -->
+    <div class="info-card lecturer">
+        <strong><i class="fas fa-info-circle mr-1"></i> How to Log In as Lecturer</strong>
+        1. Enter your <strong>Full Name</strong> exactly as you registered it.<br>
+        2. Enter the <strong>Passcode</strong> sent to your email by the Admin.<br>
+        3. Both are <strong>case-sensitive</strong> — e.g. "John Doe" ≠ "john doe".<br>
+        Not yet registered? <a href="{% url 'register' %}?role=lecturer" style="color:#7c3aed;font-weight:600;">Sign up here</a>.
+    </div>
+
+    <div class="card">
+        <div class="card-body" style="padding:2rem;">
+            <form method="POST" action="{% url 'custom_login' %}">
+                {% csrf_token %}
+                <input type="hidden" name="role" value="lecturer">
+
+                <div class="form-group">
+                    <label class="form-label">Full Name <span style="font-weight:400;color:#94a3b8;font-size:0.8rem;">(case-sensitive)</span></label>
+                    <input type="text" name="full_name" class="form-control" style="font-size:1rem;padding:12px;" placeholder="e.g. Dr. Amaka Okonkwo" autofocus required>
+                    <p class="form-hint mt-2">Must match exactly what you used during registration.</p>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Passcode <span style="font-weight:400;color:#94a3b8;font-size:0.8rem;">(from your approval email)</span></label>
+                    <input type="password" name="passcode" class="form-control" style="font-size:1rem;padding:12px;" placeholder="8-character passcode" required>
+                </div>
+
+                <button type="submit" class="btn btn-lecturer w-full" style="padding:13px;font-size:1rem;font-weight:700;border:none;color:white;border-radius:10px;margin-top:8px;">
+                    <i class="fas fa-sign-in-alt mr-2"></i> Login as Lecturer
+                </button>
+            </form>
+        </div>
+    </div>
+
+    {% else %}
+    <!-- ═══════════════════════════════════════════════
+         STUDENT LOGIN — Name + Passcode
+         ═══════════════════════════════════════════════ -->
+    <div class="info-card student">
+        <strong><i class="fas fa-info-circle mr-1"></i> How to Log In as Student</strong>
+        1. Enter your <strong>Full Name</strong> exactly as you registered it.<br>
+        2. Enter the <strong>Passcode</strong> sent to your email by the Admin.<br>
+        3. Both are <strong>case-sensitive</strong> — e.g. "Emeka Obi" ≠ "emeka obi".<br>
+        Not yet registered? <a href="{% url 'register' %}?role=student" style="color:#1d4ed8;font-weight:600;">Sign up here</a>.
+    </div>
+
+    <div class="card">
+        <div class="card-body" style="padding:2rem;">
+            <form method="POST" action="{% url 'custom_login' %}">
+                {% csrf_token %}
+                <input type="hidden" name="role" value="student">
+
+                <div class="form-group">
+                    <label class="form-label">Full Name <span style="font-weight:400;color:#94a3b8;font-size:0.8rem;">(case-sensitive)</span></label>
+                    <input type="text" name="full_name" class="form-control" style="font-size:1rem;padding:12px;" placeholder="e.g. Chukwuemeka Obi" autofocus required>
+                    <p class="form-hint mt-2">Must match exactly what you used during registration.</p>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Passcode <span style="font-weight:400;color:#94a3b8;font-size:0.8rem;">(from your approval email)</span></label>
+                    <input type="password" name="passcode" class="form-control" style="font-size:1rem;padding:12px;" placeholder="8-character passcode" required>
+                </div>
+
+                <button type="submit" class="btn btn-student w-full" style="padding:13px;font-size:1rem;font-weight:700;border:none;color:white;border-radius:10px;margin-top:8px;">
+                    <i class="fas fa-sign-in-alt mr-2"></i> Login as Student
+                </button>
+            </form>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Footer -->
+    <div class="text-center mt-6 text-sm text-muted">
+        <a href="{% url 'welcome' %}" class="text-muted"><i class="fas fa-home mr-1"></i> Back to Homepage</a>
+    </div>
 </div>
-{% endblock %}
+
+<script>
+function togglePwd() {
+    const inp = document.getElementById('password');
+    const ico = document.getElementById('eye-icon');
+    if (inp.type === 'password') { inp.type = 'text'; ico.className = 'fas fa-eye-slash'; }
+    else { inp.type = 'password'; ico.className = 'fas fa-eye'; }
+}
+</script>
+</body>
+</html>

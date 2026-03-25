@@ -85,12 +85,27 @@ def role_selection(request):
 
 
 def login_view(request):
-    """Dedicated login page for a specific role."""
+    """Dedicated login page — infers role from the URL path."""
     if request.user.is_authenticated:
-        return redirect("/")
-    
+        if request.user.is_superuser:
+            return redirect("admin_dashboard")
+        elif request.user.is_lecturer:
+            return redirect("lecturer_dashboard")
+        elif request.user.is_student:
+            return redirect("student_dashboard")
+        return redirect("welcome")
+
+    # Infer role from URL path (admin-login / student-login / lecturer-login)
+    path = request.path
+    if "admin" in path:
+        role = "admin"
+    elif "lecturer" in path:
+        role = "lecturer"
+    else:
+        role = "student"
+
     context = {
-        "role": request.GET.get("role", "student"),
+        "role": role,
         "login_error": request.session.pop("login_error", None),
     }
     return render(request, "registration/login.html", context)
@@ -98,70 +113,81 @@ def login_view(request):
 
 def custom_login(request):
     """
-    Unified login handler:
-    - Admin: Username (BUAdmin) + Password (Admin)
+    Unified POST login handler:
+    - Admin: Username + Password (direct DB check)
     - Student/Lecturer: Full Name (case-sensitive) + Passcode
     """
+    from django.urls import reverse
+
     if request.method != "POST":
         return redirect("welcome")
 
-    role = request.POST.get("role")
+    role = request.POST.get("role", "").strip()
 
-    # ADMIN LOGIN
+    # ── ADMIN LOGIN ──────────────────────────────────────────────
     if role == "admin":
         username = request.POST.get("username", "").strip()
         password = request.POST.get("password", "").strip()
-        
-        # Hardcoded admin check
-        if username == "BUAdmin" and password == "Admin":
-            # Authenticate with Django's admin user
-            user = authenticate(request, username=username, password=password)
-            if user and user.is_superuser:
-                auth_login(request, user)
-                messages.success(request, "Welcome, Administrator!")
-                return redirect("admin_dashboard")
-        
-        messages.error(request, "Invalid admin credentials.")
-        return redirect(f"/accounts/login/?role=admin")
 
-    # STUDENT / LECTURER LOGIN: Full name (case-sensitive) + passcode
+        # Try Django's authenticate first (handles hashed passwords)
+        user = authenticate(request, username=username, password=password)
+        if user is None:
+            # Fallback: direct DB check (handles edge-cases with auth backends)
+            try:
+                candidate = User.objects.get(username=username, is_superuser=True)
+                if candidate.check_password(password):
+                    user = candidate
+            except User.DoesNotExist:
+                pass
+
+        if user and user.is_superuser and user.is_active:
+            auth_login(request, user, backend="django.contrib.auth.backends.ModelBackend")
+            messages.success(request, f"Welcome back, {user.first_name or user.username}! You are logged in as Administrator.")
+            return redirect("admin_dashboard")
+
+        messages.error(request, "❌ Invalid admin credentials. Check your username and password.")
+        return redirect(reverse("admin_login"))
+
+    # ── STUDENT / LECTURER LOGIN ──────────────────────────────────
     full_name = request.POST.get("full_name", "").strip()
-    passcode = request.POST.get("passcode", "").strip()
+    passcode  = request.POST.get("passcode", "").strip()
 
     if not full_name or not passcode:
-        messages.error(request, "Please provide both name and passcode.")
-        return redirect(f"/accounts/login/?role={role}")
+        messages.error(request, "Please fill in both your Full Name and Passcode.")
+        login_url = reverse("student_login") if role == "student" else reverse("lecturer_login")
+        return redirect(login_url)
 
-    # Filter by role and active status
     if role == "student":
-        qs = User.objects.filter(is_student=True, is_active=True, approval_status='approved')
+        qs = User.objects.filter(is_student=True, is_active=True, approval_status="approved")
+        fail_url = reverse("student_login")
     elif role == "lecturer":
-        qs = User.objects.filter(is_lecturer=True, is_active=True, approval_status='approved')
+        qs = User.objects.filter(is_lecturer=True, is_active=True, approval_status="approved")
+        fail_url = reverse("lecturer_login")
     else:
-        messages.error(request, "Invalid role selected.")
+        messages.error(request, "Invalid role. Please start again.")
         return redirect("welcome")
 
     user = None
     for u in qs:
-        # Case-sensitive full name match
         if u.get_full_name == full_name and u.passcode == passcode:
             user = u
             break
 
     if user:
-        user.backend = "django.contrib.auth.backends.ModelBackend"
-        auth_login(request, user)
-        messages.success(request, f"Welcome back, {user.get_full_name}!")
-        
-        # Redirect to appropriate dashboard
+        auth_login(request, user, backend="django.contrib.auth.backends.ModelBackend")
+        messages.success(request, f"🎉 Welcome, {user.get_full_name}!")
         if user.is_student:
             return redirect("student_dashboard")
         elif user.is_lecturer:
             return redirect("lecturer_dashboard")
-        return redirect("home")
+        return redirect("welcome")
 
-    messages.error(request, "Invalid credentials. Both name and passcode are case-sensitive.")
-    return redirect(f"/accounts/login/?role={role}")
+    messages.error(
+        request,
+        "❌ Login failed. Your Full Name and Passcode are both case-sensitive. "
+        "Check the email you received from GSMS Admin."
+    )
+    return redirect(fail_url)
 
 
 def validate_username(request):
