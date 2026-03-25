@@ -1,0 +1,22 @@
+databases:
+  - name: gsms-db
+    databaseName: gsms
+    user: gsms_user
+
+services:
+  - type: web
+    name: gsms-web
+    env: python
+    buildCommand: "./build.sh"
+    startCommand: "gunicorn config.wsgi:application"
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: gsms-db
+          property: connectionString
+      - key: SECRET_KEY
+        generateValue: true
+      - key: PYTHON_VERSION
+        value: "3.11.0"
+      - key: DEBUG
+        value: "False"
