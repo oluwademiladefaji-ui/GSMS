@@ -6,4 +6,12 @@ pip install -r requirements.txt
 python manage.py collectstatic --no-input
 python manage.py migrate
 
-python manage.py shell -c "from accounts.models import User; User.objects.create_superuser('BUAdmin', 'admin@bu.edu', 'Admin') if not filter(lambda u: u.username=='BUAdmin', User.objects.all()) else None"
+# Create BUAdmin superuser if it doesn't exist
+python manage.py shell << 'EOF'
+from accounts.models import User
+if not User.objects.filter(username='BUAdmin').exists():
+    User.objects.create_superuser(username='BUAdmin', email='admin@bu.edu', password='Admin')
+    print("BUAdmin created.")
+else:
+    print("BUAdmin already exists.")
+EOF

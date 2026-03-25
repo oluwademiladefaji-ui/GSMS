@@ -22,9 +22,11 @@ from accounts.forms import (
     StudentAddForm,
     StudentSignupForm,
 )
+from django.contrib.auth import authenticate, login as auth_login
+
 from accounts.models import Parent, Student, User
 from core.models import Semester, Session
-from course.models import Course
+from course.models import Course, Program
 from result.models import TakenCourse
 
 # ########################################################
@@ -46,6 +48,62 @@ def render_to_pdf(template_name, context):
 # ########################################################
 # Authentication and Registration
 # ########################################################
+
+
+def welcome(request):
+    """Stunning landing page with role selection."""
+    if request.user.is_authenticated:
+        return redirect("/")
+    context = {
+        "programs": Program.objects.all(),
+        "active_role": request.GET.get("role", ""),
+        "login_error": request.session.pop("login_error", None),
+    }
+    return render(request, "registration/welcome.html", context)
+
+
+def custom_login(request):
+    """Case-sensitive full-name + passcode login for students and lecturers.
+    Standard username+password for admin.
+    """
+    if request.method != "POST":
+        return redirect("welcome")
+
+    role = request.POST.get("role")
+
+    if role == "admin":
+        username = request.POST.get("username", "")
+        password = request.POST.get("password", "")
+        user = authenticate(request, username=username, password=password)
+        if user and user.is_superuser:
+            auth_login(request, user)
+            return redirect("/")
+        request.session["login_error"] = "Invalid admin credentials."
+        return redirect(f"/accounts/welcome/?role=admin")
+
+    # Student / Lecturer: full name (case-sensitive) + passcode
+    full_name = request.POST.get("full_name", "").strip()   # exact case required
+    passcode  = request.POST.get("passcode", "").strip()    # exact case required
+
+    if role == "student":
+        qs = User.objects.filter(is_student=True, is_active=True)
+    else:
+        qs = User.objects.filter(is_lecturer=True, is_active=True)
+
+    user = None
+    for u in qs:
+        # Case-sensitive full name match
+        if u.get_full_name == full_name and u.passcode == passcode:
+            user = u
+            break
+
+    if user:
+        user.backend = "django.contrib.auth.backends.ModelBackend"
+        auth_login(request, user)
+        return redirect("/")
+
+    request.session["login_error"] = "Invalid name or passcode. Both are case-sensitive."
+    return redirect(f"/accounts/welcome/?role={role}")
 
 
 def validate_username(request):

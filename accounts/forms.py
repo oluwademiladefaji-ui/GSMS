@@ -1,277 +1,176 @@
 from django import forms
 from django.db import transaction
-from django.contrib.auth.forms import (
-    UserCreationForm,
-    UserChangeForm,
-)
-from django.contrib.auth.forms import PasswordResetForm
+from django.contrib.auth.forms import UserCreationForm, UserChangeForm, PasswordResetForm
+from django.utils.translation import gettext_lazy as _
 from course.models import Program
 from .models import User, Student, Parent, RELATION_SHIP, LEVEL, GENDERS
 
 
-class StaffSignupForm(forms.ModelForm):
-    first_name = forms.CharField(
-        max_length=30,
-        widget=forms.TextInput(attrs={"type": "text", "class": "form-control"}),
-        label="First Name",
+def fc(widget_type="text", extra=None):
+    """Helper to build standard form-control attrs."""
+    attrs = {"type": widget_type, "class": "form-control"}
+    if extra:
+        attrs.update(extra)
+    return attrs
+
+
+# ─── Signup Forms (no password, inactive until admin approves) ─────────────────
+
+class StaffSignupForm(forms.Form):
+    first_name = forms.CharField(max_length=50, widget=forms.TextInput(attrs=fc()), label=_("First Name"))
+    last_name  = forms.CharField(max_length=50, widget=forms.TextInput(attrs=fc()), label=_("Last Name"))
+    email      = forms.EmailField(widget=forms.TextInput(attrs=fc("email")), label=_("Email Address"))
+    phone      = forms.CharField(max_length=30, widget=forms.TextInput(attrs=fc()), label=_("Phone Number"))
+    address    = forms.CharField(max_length=100, widget=forms.TextInput(attrs=fc()), label=_("Address"))
+    gender     = forms.ChoiceField(choices=GENDERS, widget=forms.Select(attrs={"class": "form-select"}))
+
+    @transaction.atomic()
+    def save(self):
+        data  = self.cleaned_data
+        email = data["email"]
+        user  = User(
+            username      = email,
+            email         = email,
+            first_name    = data["first_name"],
+            last_name     = data["last_name"],
+            phone         = data["phone"],
+            address       = data["address"],
+            gender        = data["gender"],
+            is_lecturer   = True,
+            is_active     = False,
+        )
+        user.set_unusable_password()
+        user.save()
+        return user
+
+
+class StudentSignupForm(forms.Form):
+    first_name = forms.CharField(max_length=50, widget=forms.TextInput(attrs=fc()), label=_("First Name"))
+    last_name  = forms.CharField(max_length=50, widget=forms.TextInput(attrs=fc()), label=_("Last Name"))
+    email      = forms.EmailField(widget=forms.TextInput(attrs=fc("email")), label=_("Email Address"))
+    phone      = forms.CharField(max_length=30, widget=forms.TextInput(attrs=fc()), label=_("Phone Number"))
+    address    = forms.CharField(max_length=100, widget=forms.TextInput(attrs=fc()), label=_("Address"))
+    gender     = forms.ChoiceField(choices=GENDERS, widget=forms.Select(attrs={"class": "form-select"}))
+    level      = forms.ChoiceField(choices=LEVEL, widget=forms.Select(attrs={"class": "form-select"}))
+    program    = forms.ModelChoiceField(
+        queryset=Program.objects.all(),
+        widget=forms.Select(attrs={"class": "form-select"}),
+        label=_("Program"),
     )
 
-    first_name = forms.CharField(
-        max_length=30,
-        widget=forms.TextInput(
-            attrs={
-                "type": "text",
-                "class": "form-control",
-            }
-        ),
-        label="First Name",
-    )
+    @transaction.atomic()
+    def save(self):
+        data  = self.cleaned_data
+        email = data["email"]
+        user  = User(
+            username   = email,
+            email      = email,
+            first_name = data["first_name"],
+            last_name  = data["last_name"],
+            phone      = data["phone"],
+            address    = data["address"],
+            gender     = data["gender"],
+            is_student = True,
+            is_active  = False,
+        )
+        user.set_unusable_password()
+        user.save()
+        Student.objects.create(
+            student = user,
+            level   = data["level"],
+            program = data["program"],
+        )
+        return user
 
-    last_name = forms.CharField(
-        max_length=30,
-        widget=forms.TextInput(attrs={"type": "text", "class": "form-control"}),
-        label="Last Name",
-    )
 
-    gender = forms.CharField(
-        widget=forms.Select(
-            choices=GENDERS,
-            attrs={
-                "class": "browser-default custom-select form-control",
-            },
-        ),
-    )
+# ─── Admin-added forms (still used by admin panel) ────────────────────────────
 
-    address = forms.CharField(
-        max_length=30,
-        widget=forms.TextInput(attrs={"type": "text", "class": "form-control"}),
-        label="Address",
-    )
+class StaffAddForm(UserCreationForm):
+    first_name = forms.CharField(max_length=30, widget=forms.TextInput(attrs=fc()), label=_("First Name"))
+    last_name  = forms.CharField(max_length=30, widget=forms.TextInput(attrs=fc()), label=_("Last Name"))
+    gender     = forms.ChoiceField(choices=GENDERS, widget=forms.Select(attrs={"class": "form-select"}))
+    address    = forms.CharField(max_length=60, widget=forms.TextInput(attrs=fc()), label=_("Address"))
+    phone      = forms.CharField(max_length=30, widget=forms.TextInput(attrs=fc()), label=_("Mobile No."))
+    email      = forms.EmailField(widget=forms.TextInput(attrs=fc("email")), label=_("Email"))
+    password1  = forms.CharField(max_length=30, widget=forms.TextInput(attrs=fc("password")), label=_("Password"))
+    password2  = forms.CharField(max_length=30, widget=forms.TextInput(attrs=fc("password")), label=_("Confirm Password"))
 
-    phone = forms.CharField(
-        max_length=30,
-        widget=forms.TextInput(
-            attrs={
-                "type": "text",
-                "class": "form-control",
-            }
-        ),
-        label="Mobile No.",
-    )
-
-    email = forms.CharField(
-        max_length=30,
-        widget=forms.TextInput(attrs={"type": "text", "class": "form-control"}),
-        label="Email",
-    )
-
-    class Meta:
+    class Meta(UserCreationForm.Meta):
         model = User
-        fields = ['first_name', 'last_name', 'email', 'phone', 'address', 'gender']
 
     @transaction.atomic()
     def save(self, commit=True):
         user = super().save(commit=False)
         user.is_lecturer = True
-        user.is_active = False # Pending admin approval
-        user.username = self.cleaned_data.get("email") # Use email directly as username for now to avoid duplicates
-        user.first_name = self.cleaned_data.get("first_name")
-        user.last_name = self.cleaned_data.get("last_name")
-        user.phone = self.cleaned_data.get("phone")
-        user.address = self.cleaned_data.get("address")
-        user.email = self.cleaned_data.get("email")
-        user.set_unusable_password()
-
+        user.is_active   = True
+        user.first_name  = self.cleaned_data.get("first_name")
+        user.last_name   = self.cleaned_data.get("last_name")
+        user.phone       = self.cleaned_data.get("phone")
+        user.address     = self.cleaned_data.get("address")
+        user.email       = self.cleaned_data.get("email")
         if commit:
             user.save()
-
         return user
 
 
-class StudentSignupForm(forms.ModelForm):
-    first_name = forms.CharField(
-        max_length=30,
-        widget=forms.TextInput(attrs={"type": "text", "class": "form-control"}),
-        label="First name",
-    )
-    address = forms.CharField(
-        max_length=30,
-        widget=forms.TextInput(attrs={"type": "text", "class": "form-control"}),
-        label="Address",
-    )
+class StudentAddForm(UserCreationForm):
+    first_name = forms.CharField(max_length=30, widget=forms.TextInput(attrs=fc()), label=_("First Name"))
+    last_name  = forms.CharField(max_length=30, widget=forms.TextInput(attrs=fc()), label=_("Last Name"))
+    gender     = forms.ChoiceField(choices=GENDERS, widget=forms.Select(attrs={"class": "form-select"}))
+    address    = forms.CharField(max_length=60, widget=forms.TextInput(attrs=fc()), label=_("Address"))
+    phone      = forms.CharField(max_length=30, widget=forms.TextInput(attrs=fc()), label=_("Mobile No."))
+    email      = forms.EmailField(widget=forms.TextInput(attrs=fc("email")), label=_("Email Address"))
+    level      = forms.ChoiceField(choices=LEVEL, widget=forms.Select(attrs={"class": "form-select"}))
+    program    = forms.ModelChoiceField(queryset=Program.objects.all(), widget=forms.Select(attrs={"class": "form-select"}), label=_("Program"))
+    password1  = forms.CharField(max_length=30, widget=forms.TextInput(attrs=fc("password")), label=_("Password"))
+    password2  = forms.CharField(max_length=30, widget=forms.TextInput(attrs=fc("password")), label=_("Confirm Password"))
 
-    phone = forms.CharField(
-        max_length=30,
-        widget=forms.TextInput(
-            attrs={
-                "type": "text",
-                "class": "form-control",
-            }
-        ),
-        label="Mobile No.",
-    )
-
-    first_name = forms.CharField(
-        max_length=30,
-        widget=forms.TextInput(
-            attrs={
-                "type": "text",
-                "class": "form-control",
-            }
-        ),
-        label="First name",
-    )
-
-    last_name = forms.CharField(
-        max_length=30,
-        widget=forms.TextInput(attrs={"type": "text", "class": "form-control"}),
-        label="Last name",
-    )
-
-    gender = forms.CharField(
-        widget=forms.Select(
-            choices=GENDERS,
-            attrs={
-                "class": "browser-default custom-select form-control",
-            },
-        ),
-    )
-
-    level = forms.CharField(
-        widget=forms.Select(
-            choices=LEVEL,
-            attrs={
-                "class": "browser-default custom-select form-control",
-            },
-        ),
-    )
-
-    program = forms.ModelChoiceField(
-        queryset=Program.objects.all(),
-        widget=forms.Select(
-            attrs={"class": "browser-default custom-select form-control"}
-        ),
-        label="Program",
-    )
-
-    email = forms.EmailField(
-        widget=forms.TextInput(attrs={"type": "email", "class": "form-control"}),
-        label="Email Address",
-    )
-
-    class Meta:
+    class Meta(UserCreationForm.Meta):
         model = User
-        fields = ['first_name', 'last_name', 'email', 'phone', 'address', 'gender', 'level', 'program']
 
     @transaction.atomic()
     def save(self, commit=True):
         user = super().save(commit=False)
         user.is_student = True
-        user.is_active = False # Pending admin approval
-        user.username = self.cleaned_data.get("email") # Use email as username
+        user.is_active  = True
         user.first_name = self.cleaned_data.get("first_name")
-        user.last_name = self.cleaned_data.get("last_name")
-        user.gender = self.cleaned_data.get("gender")
-        user.address = self.cleaned_data.get("address")
-        user.phone = self.cleaned_data.get("phone")
-        user.email = self.cleaned_data.get("email")
-        user.set_unusable_password()
-
+        user.last_name  = self.cleaned_data.get("last_name")
+        user.gender     = self.cleaned_data.get("gender")
+        user.address    = self.cleaned_data.get("address")
+        user.phone      = self.cleaned_data.get("phone")
+        user.email      = self.cleaned_data.get("email")
         if commit:
             user.save()
             Student.objects.create(
-                student=user,
-                level=self.cleaned_data.get("level"),
-                program=self.cleaned_data.get("program"),
+                student = user,
+                level   = self.cleaned_data.get("level"),
+                program = self.cleaned_data.get("program"),
             )
-
         return user
 
 
 class ProfileUpdateForm(UserChangeForm):
-    email = forms.EmailField(
-        widget=forms.TextInput(
-            attrs={
-                "type": "email",
-                "class": "form-control",
-            }
-        ),
-        label="Email Address",
-    )
-
-    first_name = forms.CharField(
-        widget=forms.TextInput(
-            attrs={
-                "type": "text",
-                "class": "form-control",
-            }
-        ),
-        label="First Name",
-    )
-
-    last_name = forms.CharField(
-        widget=forms.TextInput(
-            attrs={
-                "type": "text",
-                "class": "form-control",
-            }
-        ),
-        label="Last Name",
-    )
-
-    gender = forms.CharField(
-        widget=forms.Select(
-            choices=GENDERS,
-            attrs={
-                "class": "browser-default custom-select form-control",
-            },
-        ),
-    )
-
-    phone = forms.CharField(
-        widget=forms.TextInput(
-            attrs={
-                "type": "text",
-                "class": "form-control",
-            }
-        ),
-        label="Phone No.",
-    )
-
-    address = forms.CharField(
-        widget=forms.TextInput(
-            attrs={
-                "type": "text",
-                "class": "form-control",
-            }
-        ),
-        label="Address / city",
-    )
+    email      = forms.EmailField(widget=forms.TextInput(attrs=fc("email")), label=_("Email Address"))
+    first_name = forms.CharField(widget=forms.TextInput(attrs=fc()), label=_("First Name"))
+    last_name  = forms.CharField(widget=forms.TextInput(attrs=fc()), label=_("Last Name"))
+    gender     = forms.ChoiceField(choices=GENDERS, widget=forms.Select(attrs={"class": "form-select"}))
+    phone      = forms.CharField(widget=forms.TextInput(attrs=fc()), label=_("Phone No."))
+    address    = forms.CharField(widget=forms.TextInput(attrs=fc()), label=_("Address / City"))
 
     class Meta:
-        model = User
-        fields = [
-            "first_name",
-            "last_name",
-            "gender",
-            "email",
-            "phone",
-            "address",
-            "picture",
-        ]
+        model  = User
+        fields = ["first_name", "last_name", "gender", "email", "phone", "address", "picture"]
 
 
 class ProgramUpdateForm(UserChangeForm):
     program = forms.ModelChoiceField(
         queryset=Program.objects.all(),
-        widget=forms.Select(
-            attrs={"class": "browser-default custom-select form-control"}
-        ),
-        label="Program",
+        widget=forms.Select(attrs={"class": "form-select"}),
+        label=_("Program"),
     )
 
     class Meta:
-        model = Student
+        model  = Student
         fields = ["program"]
 
 
@@ -279,119 +178,20 @@ class EmailValidationOnForgotPassword(PasswordResetForm):
     def clean_email(self):
         email = self.cleaned_data["email"]
         if not User.objects.filter(email__iexact=email, is_active=True).exists():
-            msg = "There is no user registered with the specified E-mail address. "
-            self.add_error("email", msg)
-            return email
+            self.add_error("email", "No user is registered with this email address.")
+        return email
 
 
 class ParentAddForm(UserCreationForm):
-    username = forms.CharField(
-        max_length=30,
-        widget=forms.TextInput(
-            attrs={
-                "type": "text",
-                "class": "form-control",
-            }
-        ),
-        label="Username",
-    )
-    address = forms.CharField(
-        max_length=30,
-        widget=forms.TextInput(
-            attrs={
-                "type": "text",
-                "class": "form-control",
-            }
-        ),
-        label="Address",
-    )
-
-    phone = forms.CharField(
-        max_length=30,
-        widget=forms.TextInput(
-            attrs={
-                "type": "text",
-                "class": "form-control",
-            }
-        ),
-        label="Mobile No.",
-    )
-
-    first_name = forms.CharField(
-        max_length=30,
-        widget=forms.TextInput(
-            attrs={
-                "type": "text",
-                "class": "form-control",
-            }
-        ),
-        label="First name",
-    )
-
-    last_name = forms.CharField(
-        max_length=30,
-        widget=forms.TextInput(
-            attrs={
-                "type": "text",
-                "class": "form-control",
-            }
-        ),
-        label="Last name",
-    )
-
-    email = forms.EmailField(
-        widget=forms.TextInput(
-            attrs={
-                "type": "email",
-                "class": "form-control",
-            }
-        ),
-        label="Email Address",
-    )
-
-    student = forms.ModelChoiceField(
-        queryset=Student.objects.all(),
-        widget=forms.Select(
-            attrs={"class": "browser-default custom-select form-control"}
-        ),
-        label="Student",
-    )
-
-    relation_ship = forms.CharField(
-        widget=forms.Select(
-            choices=RELATION_SHIP,
-            attrs={
-                "class": "browser-default custom-select form-control",
-            },
-        ),
-    )
-
-    password1 = forms.CharField(
-        max_length=30,
-        widget=forms.TextInput(
-            attrs={
-                "type": "password",
-                "class": "form-control",
-            }
-        ),
-        label="Password",
-    )
-
-    password2 = forms.CharField(
-        max_length=30,
-        widget=forms.TextInput(
-            attrs={
-                "type": "password",
-                "class": "form-control",
-            }
-        ),
-        label="Password Confirmation",
-    )
-
-    # def validate_email(self):
-    #     email = self.cleaned_data['email']
-    #     if User.objects.filter(email__iexact=email, is_active=True).exists():
-    #         raise forms.ValidationError("Email has taken, try another email address. ")
+    first_name   = forms.CharField(max_length=30, widget=forms.TextInput(attrs=fc()), label=_("First Name"))
+    last_name    = forms.CharField(max_length=30, widget=forms.TextInput(attrs=fc()), label=_("Last Name"))
+    email        = forms.EmailField(widget=forms.TextInput(attrs=fc("email")), label=_("Email Address"))
+    address      = forms.CharField(max_length=60, widget=forms.TextInput(attrs=fc()), label=_("Address"))
+    phone        = forms.CharField(max_length=30, widget=forms.TextInput(attrs=fc()), label=_("Mobile No."))
+    student      = forms.ModelChoiceField(queryset=Student.objects.all(), widget=forms.Select(attrs={"class": "form-select"}))
+    relation_ship= forms.ChoiceField(choices=RELATION_SHIP, widget=forms.Select(attrs={"class": "form-select"}))
+    password1    = forms.CharField(max_length=30, widget=forms.TextInput(attrs=fc("password")), label=_("Password"))
+    password2    = forms.CharField(max_length=30, widget=forms.TextInput(attrs=fc("password")), label=_("Confirm Password"))
 
     class Meta(UserCreationForm.Meta):
         model = User
@@ -399,17 +199,16 @@ class ParentAddForm(UserCreationForm):
     @transaction.atomic()
     def save(self):
         user = super().save(commit=False)
-        user.is_parent = True
+        user.is_parent  = True
         user.first_name = self.cleaned_data.get("first_name")
-        user.last_name = self.cleaned_data.get("last_name")
-        user.address = self.cleaned_data.get("address")
-        user.phone = self.cleaned_data.get("phone")
-        user.email = self.cleaned_data.get("email")
+        user.last_name  = self.cleaned_data.get("last_name")
+        user.address    = self.cleaned_data.get("address")
+        user.phone      = self.cleaned_data.get("phone")
+        user.email      = self.cleaned_data.get("email")
         user.save()
-        parent = Parent.objects.create(
-            user=user,
-            student=self.cleaned_data.get("student"),
-            relation_ship=self.cleaned_data.get("relation_ship"),
+        Parent.objects.create(
+            user         = user,
+            student      = self.cleaned_data.get("student"),
+            relation_ship= self.cleaned_data.get("relation_ship"),
         )
-        parent.save()
         return user

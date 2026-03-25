@@ -209,8 +209,9 @@ EMAIL_USE_SSL = False
 CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
 CRISPY_TEMPLATE_PACK = "bootstrap5"
 
+LOGIN_URL = "/accounts/welcome/"
 LOGIN_REDIRECT_URL = "/"
-LOGOUT_REDIRECT_URL = "/"
+LOGOUT_REDIRECT_URL = "/accounts/welcome/"
 
 # Strip payment config
 STRIPE_SECRET_KEY = config("STRIPE_SECRET_KEY", default="")
