@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+{% load i18n %}
+{% block title %}{{ title }}{% endblock title %}
+
+{% block content %}
+<div id="content-wrapper">
+    <div class="container-fluid">
+        <!-- Breadcrumbs-->
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="{% url 'home' %}">{% trans 'Dashboard' %}</a>
+            </li>
+            <li class="breadcrumb-item active">{% trans 'Pending Approvals' %}</li>
+        </ol>
+
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        <div class="card mb-3 shadow-sm border-0">
+            <div class="card-header bg-primary text-white">
+                <i class="fas fa-users-cog me-2"></i>
+                {% trans 'Users Pending Your Approval' %}
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover table-striped" width="100%" cellspacing="0">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>{% trans 'Name' %}</th>
+                                <th>{% trans 'Email' %}</th>
+                                <th>{% trans 'Role' %}</th>
+                                <th>{% trans 'Date Requested' %}</th>
+                                <th>{% trans 'Passcode' %}</th>
+                                <th>{% trans 'Actions' %}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for u in pending_users %}
+                            <tr>
+                                <td>{{ u.get_full_name }}</td>
+                                <td>{{ u.email }}</td>
+                                <td>
+                                    {% if u.is_student %}<span class="badge bg-info text-dark">{% trans 'Student' %}</span>{% endif %}
+                                    {% if u.is_lecturer %}<span class="badge bg-warning text-dark">{% trans 'Lecturer' %}</span>{% endif %}
+                                </td>
+                                <td>{{ u.date_joined|date:"M d, Y" }}</td>
+                                <td>
+                                    {% if u.passcode %}
+                                        <span class="font-monospace fw-bold">{{ u.passcode }}</span>
+                                    {% else %}
+                                        <span class="text-muted"><i class="fas fa-clock"></i> Pending</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <form method="POST" action="{% url 'approve_user' u.pk %}" style="display:inline;">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-success btn-sm shadow-sm" onclick="return confirm('{% trans 'Are you sure you want to approve this user and generate a passcode?' %}')">
+                                            <i class="fas fa-check-circle"></i> {% trans 'Approve' %}
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="6" class="text-center text-muted py-4">{% trans 'No pending approvals at this time.' %}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock content %}

@@ -1,116 +1,92 @@
 {% extends 'registration/registration_base.html' %}
-{% load i18n %}
-{% block title %}{% trans 'Register | Learning management system' %}{% endblock title %}
-{% load crispy_forms_tags %}
+{% load i18n crispy_forms_tags %}
+{% block title %}{% trans 'Register | GSMS' %}{% endblock title %}
 
 {% block content %}
-
 <div class="container py-5">
-	
-  <div class="blue-gradient text-light p-3 mb-5">
-	  <h1 class="lead my-0">
-		<i class="fas fa-lock ms-2"></i>{% trans 'Create Your Account' %}
-	  </h1>
-  </div>
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Messages -->
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show shadow-sm" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
 
-  <form action="" method="POST" id="login-form">
-	  {% csrf_token %}
-	  <div class="row">
-		  <div class="col-lg-6">
-			<h1 class="lead p-2 bg-light">{% trans 'Login Form' %}</h1>
-			<div class="mb-3">
-				<label for="username_id" class="form-label">{{ form.username.label }}</label>
-				{{ form.username }}
-				<div id="message-wrapper"></div>
-			</div>
-			<div class="mb-3">
-				<label for="email_id" class="form-label">{{ form.email.label }}</label>
-				{{ form.email }}
-			</div>
-			<div class="mb-3">
-				<label for="password1_id" class="form-label">{{ form.password1.label }}</label>
-				{{ form.password1 }}
-			</div>
-			<div class="mb-3">
-				<label for="password2_id" class="form-label">{{ form.password2.label }}</label>
-				{{ form.password2 }}
-			</div>
-		  </div>
-		  <div class="col-lg-6">
-			<h1 class="lead p-2 bg-light">{% trans 'Personal Info' %}</h1>
-			<div class="mb-3">
-				<label for="address_id" class="form-label">{{ form.address.label }}</label>
-				{{ form.address }}
-			</div>
-			<div class="mb-3">
-				<label for="phone_id" class="form-label">{{ form.phone.label }}</label>
-				{{ form.phone }}
-			</div>
-			<div class="mb-3">
-				<label for="first_name_id" class="form-label">{{ form.first_name.label }}</label>
-				{{ form.first_name }}
-			</div>
-			<div class="mb-3">
-				<label for="last_name_id" class="form-label">{{ form.last_name.label }}</label>
-				{{ form.last_name }}
-			</div>
-			<div class="mb-3">
-				<label for="gender_id" class="form-label">{{ form.gender.label }}</label>
-				{{ form.gender }}
-			</div>
-			<div class="mb-3">
-				<label for="level_id" class="form-label">{{ form.level.label }}</label>
-				{{ form.level }}
-			</div>
-			<div class="mb-3">
-				<label for="program_id" class="form-label">{{ form.program.label }}</label>
-				{{ form.program }}
-			</div>
-		  </div>
-	  </div>
+            <div class="card shadow-lg border-0 rounded-4 overflow-hidden">
+                <div class="card-header bg-gradient-primary text-white text-center py-4" style="background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);">
+                    <h2 class="mb-0 fw-bold"><i class="fas fa-user-plus me-2"></i>{% trans 'Request an Account' %}</h2>
+                    <p class="text-light mb-0 mt-2">{% trans 'Sign up below. An administrator will review your details and issue a unique passcode for login.' %}</p>
+                </div>
+                
+                <div class="card-body p-4 p-md-5 bg-light">
+                    <!-- Navigation Tabs -->
+                    <ul class="nav nav-pills nav-justified mb-4 border rounded-pill p-1 bg-white shadow-sm" id="pills-tab" role="tablist">
+                      <li class="nav-item" role="presentation">
+                        <button class="nav-link rounded-pill fw-bold {% if active_tab == 'student' %}active{% endif %}" id="pills-student-tab" data-bs-toggle="pill" data-bs-target="#pills-student" type="button" role="tab">
+                            <i class="fas fa-user-graduate me-1"></i> {% trans 'I am a Student' %}
+                        </button>
+                      </li>
+                      <li class="nav-item" role="presentation">
+                        <button class="nav-link rounded-pill fw-bold {% if active_tab == 'lecturer' %}active{% endif %}" id="pills-lecturer-tab" data-bs-toggle="pill" data-bs-target="#pills-lecturer" type="button" role="tab">
+                            <i class="fas fa-chalkboard-teacher me-1"></i> {% trans 'I am a Lecturer' %}
+                        </button>
+                      </li>
+                    </ul>
 
-    {% if form.errors %}
-          <p class="text-danger my-2"><i class="fas fa-exclamation-circle"></i>{% trans 'Invalid ID & Password.' %}</p><br>
-    {% endif %}
+                    <div class="tab-content" id="pills-tabContent">
+                      <!-- STUDENT TAB -->
+                      <div class="tab-pane fade {% if active_tab == 'student' %}show active{% endif %}" id="pills-student" role="tabpanel">
+                        <form action="{% url 'register' %}" method="POST" class="needs-validation">
+                            {% csrf_token %}
+                            <input type="hidden" name="role" value="student">
+                            
+                            <div class="bg-white p-4 rounded-4 shadow-sm border mb-4">
+                                <h5 class="text-primary mb-3 border-bottom pb-2">{% trans 'Student Details' %}</h5>
+                                <div class="row g-3">
+                                    {{ student_form|crispy }}
+                                </div>
+                            </div>
+                            
+                            <button class="btn btn-primary btn-lg w-100 py-3 rounded-pill shadow" type="submit">
+                                <i class="fas fa-paper-plane me-2"></i>{% trans 'Submit Student Application' %}
+                            </button>
+                        </form>
+                      </div>
 
-    <button type="submit" class="btn btn-primary" id="login-btn"><i class="fas fa-sign-in-alt"></i><small>{% trans 'SIGN UP' %}</small></button>
-  </form>
-  <br>
-  <span> {% trans 'Already Registered ?' %} </span><a href="{% url 'login' %}" class="link">{% trans 'Login' %}</a>
+                      <!-- LECTURER TAB -->
+                      <div class="tab-pane fade {% if active_tab == 'lecturer' %}show active{% endif %}" id="pills-lecturer" role="tabpanel">
+                        <form action="{% url 'register' %}" method="POST" class="needs-validation">
+                            {% csrf_token %}
+                            <input type="hidden" name="role" value="lecturer">
+                            
+                            <div class="bg-white p-4 rounded-4 shadow-sm border mb-4">
+                                <h5 class="text-primary mb-3 border-bottom pb-2">{% trans 'Lecturer Details' %}</h5>
+                                <div class="row g-3">
+                                    {{ staff_form|crispy }}
+                                </div>
+                            </div>
+                            
+                            <button class="btn btn-primary btn-lg w-100 py-3 rounded-pill shadow" type="submit">
+                                <i class="fas fa-paper-plane me-2"></i>{% trans 'Submit Lecturer Application' %}
+                            </button>
+                        </form>
+                      </div>
+                    </div>
+
+                    <div class="text-center mt-5">
+                        <p class="text-muted mb-2">{% trans 'Already approved and received your passcode?' %}</p>
+                        <a href="{% url 'login' %}" class="btn btn-outline-primary rounded-pill px-5 fw-bold">
+                            <i class="fas fa-sign-in-alt me-1"></i> {% trans 'Log In Here' %}
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
+
 {% endblock content %}
-
-{% block js %}
-
-<script>
-  const loginFormEl = document.getElementById('login-form');
-  const loginBtnEl = document.getElementById('login-btn');
-
-  loginFormEl.addEventListener('submit', () => {
-    loginBtnEl.innerHTML = '<i class="fas fa-sign-in-alt"></i> Signining you in . . .';
-    loginBtnEl.classList.add("disabled");
-  })
-
-  $("#username_id").on("input", function () {
-    username = $(this).val();
-
-    $.ajax({
-      url: "/accounts/ajax/validate-username/",
-      data: {
-        username: username
-      },
-      dataType: 'json',
-      success: function (data) {
-        if (data.is_taken) {
-          console.log(data.is_taken);
-          $('#message-wrapper').html(`<p class="my-2 text-danger"><span class="bg-error p-2"><b>${username}</b> already taken :( try another one </span></p>`)
-        }
-        else {
-          $('#message-wrapper').html(`<p class="my-2 text-success"><span class="bg-correct p-2"><b>${username}</b> is valid </span></p>`)
-        }
-      }
-
-    })
-  })
-</script>
-{% endblock %}

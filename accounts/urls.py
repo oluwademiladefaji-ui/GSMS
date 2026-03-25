@@ -26,6 +26,8 @@ from .views import (
     ParentAdd,
     validate_username,
     register,
+    pending_approvals,
+    approve_user,
     render_lecturer_pdf_list,  # new
     render_student_pdf_list,  # new
 )
@@ -56,6 +58,8 @@ urlpatterns = [
     path("parents/add/", ParentAdd.as_view(), name="add_parent"),
     path("ajax/validate-username/", validate_username, name="validate_username"),
     path("register/", register, name="register"),
+    path("approvals/", pending_approvals, name="pending_approvals"),
+    path("approvals/<int:pk>/approve/", approve_user, name="approve_user"),
     # paths to pdf
     path(
         "create_lecturers_pdf_list/", render_lecturer_pdf_list, name="lecturer_list_pdf"

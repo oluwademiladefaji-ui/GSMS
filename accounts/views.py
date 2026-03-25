@@ -6,6 +6,7 @@ from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import get_template, render_to_string
 from django.utils.decorators import method_decorator
+from django.utils.crypto import get_random_string
 from django.views.generic import CreateView
 from django_filters.views import FilterView
 from xhtml2pdf import pisa
@@ -17,7 +18,9 @@ from accounts.forms import (
     ProfileUpdateForm,
     ProgramUpdateForm,
     StaffAddForm,
+    StaffSignupForm,
     StudentAddForm,
+    StudentSignupForm,
 )
 from accounts.models import Parent, Student, User
 from core.models import Semester, Session
@@ -53,17 +56,50 @@ def validate_username(request):
 
 def register(request):
     if request.method == "POST":
-        form = StudentAddForm(request.POST)
+        role = request.POST.get("role", "student")
+        if role == "student":
+            form = StudentSignupForm(request.POST)
+        else:
+            form = StaffSignupForm(request.POST)
+        
         if form.is_valid():
             form.save()
-            messages.success(request, "Account created successfully.")
+            messages.success(request, "Registration successful! Your account is pending admin approval.")
             return redirect("login")
-        messages.error(
-            request, "Something is not correct, please fill all fields correctly."
-        )
+        else:
+            messages.error(request, "Please correct the errors below.")
+            return render(request, "registration/register.html", {
+                "student_form": StudentSignupForm(request.POST) if role == "student" else StudentSignupForm(),
+                "staff_form": StaffSignupForm(request.POST) if role == "lecturer" else StaffSignupForm(),
+                "active_tab": role
+            })
     else:
-        form = StudentAddForm()
-    return render(request, "registration/register.html", {"form": form})
+        student_form = StudentSignupForm()
+        staff_form = StaffSignupForm()
+    return render(request, "registration/register.html", {
+        "student_form": student_form,
+        "staff_form": staff_form,
+        "active_tab": "student"
+    })
+
+@login_required
+@admin_required
+def pending_approvals(request):
+    pending_users = User.objects.filter(is_active=False, is_superuser=False)
+    return render(request, "accounts/pending_approvals.html", {"pending_users": pending_users, "title": "Pending Approvals"})
+
+@login_required
+@admin_required
+def approve_user(request, pk):
+    user = get_object_or_404(User, pk=pk)
+    if not user.is_active:
+        passcode = get_random_string(6).upper()
+        user.set_password(passcode)
+        user.passcode = passcode
+        user.is_active = True
+        user.save()
+        messages.success(request, f"User {user.get_full_name} approved! Passcode: {passcode}")
+    return redirect("pending_approvals")
 
 
 # ########################################################

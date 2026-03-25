@@ -9,17 +9,11 @@ from course.models import Program
 from .models import User, Student, Parent, RELATION_SHIP, LEVEL, GENDERS
 
 
-class StaffAddForm(UserCreationForm):
-    username = forms.CharField(
+class StaffSignupForm(forms.ModelForm):
+    first_name = forms.CharField(
         max_length=30,
-        widget=forms.TextInput(
-            attrs={
-                "type": "text",
-                "class": "form-control",
-            }
-        ),
-        label="Username",
-        required=False,
+        widget=forms.TextInput(attrs={"type": "text", "class": "form-control"}),
+        label="First Name",
     )
 
     first_name = forms.CharField(
@@ -35,12 +29,7 @@ class StaffAddForm(UserCreationForm):
 
     last_name = forms.CharField(
         max_length=30,
-        widget=forms.TextInput(
-            attrs={
-                "type": "text",
-                "class": "form-control",
-            }
-        ),
+        widget=forms.TextInput(attrs={"type": "text", "class": "form-control"}),
         label="Last Name",
     )
 
@@ -55,12 +44,7 @@ class StaffAddForm(UserCreationForm):
 
     address = forms.CharField(
         max_length=30,
-        widget=forms.TextInput(
-            attrs={
-                "type": "text",
-                "class": "form-control",
-            }
-        ),
+        widget=forms.TextInput(attrs={"type": "text", "class": "form-control"}),
         label="Address",
     )
 
@@ -77,52 +61,26 @@ class StaffAddForm(UserCreationForm):
 
     email = forms.CharField(
         max_length=30,
-        widget=forms.TextInput(
-            attrs={
-                "type": "text",
-                "class": "form-control",
-            }
-        ),
+        widget=forms.TextInput(attrs={"type": "text", "class": "form-control"}),
         label="Email",
     )
 
-    password1 = forms.CharField(
-        max_length=30,
-        widget=forms.TextInput(
-            attrs={
-                "type": "password",
-                "class": "form-control",
-            }
-        ),
-        label="Password",
-        required=True,
-    )
-
-    password2 = forms.CharField(
-        max_length=30,
-        widget=forms.TextInput(
-            attrs={
-                "type": "password",
-                "class": "form-control",
-            }
-        ),
-        label="Password Confirmation",
-        required=True,
-    )
-
-    class Meta(UserCreationForm.Meta):
+    class Meta:
         model = User
+        fields = ['first_name', 'last_name', 'email', 'phone', 'address', 'gender']
 
     @transaction.atomic()
     def save(self, commit=True):
         user = super().save(commit=False)
         user.is_lecturer = True
-        user.is_active = True
+        user.is_active = False # Pending admin approval
+        user.username = self.cleaned_data.get("email") # Use email directly as username for now to avoid duplicates
         user.first_name = self.cleaned_data.get("first_name")
         user.last_name = self.cleaned_data.get("last_name")
         user.phone = self.cleaned_data.get("phone")
         user.address = self.cleaned_data.get("address")
         user.email = self.cleaned_data.get("email")
+        user.set_unusable_password()
 
         if commit:
             user.save()
@@ -130,23 +88,15 @@ class StaffAddForm(UserCreationForm):
         return user
 
 
-class StudentAddForm(UserCreationForm):
-    username = forms.CharField(
+class StudentSignupForm(forms.ModelForm):
+    first_name = forms.CharField(
         max_length=30,
-        widget=forms.TextInput(
-            attrs={"type": "text", "class": "form-control", "id": "username_id"}
-        ),
-        label="Username",
-        required=False,
+        widget=forms.TextInput(attrs={"type": "text", "class": "form-control"}),
+        label="First name",
     )
     address = forms.CharField(
         max_length=30,
-        widget=forms.TextInput(
-            attrs={
-                "type": "text",
-                "class": "form-control",
-            }
-        ),
+        widget=forms.TextInput(attrs={"type": "text", "class": "form-control"}),
         label="Address",
     )
 
@@ -174,12 +124,7 @@ class StudentAddForm(UserCreationForm):
 
     last_name = forms.CharField(
         max_length=30,
-        widget=forms.TextInput(
-            attrs={
-                "type": "text",
-                "class": "form-control",
-            }
-        ),
+        widget=forms.TextInput(attrs={"type": "text", "class": "form-control"}),
         label="Last name",
     )
 
@@ -210,59 +155,27 @@ class StudentAddForm(UserCreationForm):
     )
 
     email = forms.EmailField(
-        widget=forms.TextInput(
-            attrs={
-                "type": "email",
-                "class": "form-control",
-            }
-        ),
+        widget=forms.TextInput(attrs={"type": "email", "class": "form-control"}),
         label="Email Address",
     )
 
-    password1 = forms.CharField(
-        max_length=30,
-        widget=forms.TextInput(
-            attrs={
-                "type": "password",
-                "class": "form-control",
-            }
-        ),
-        label="Password",
-        required=True,
-    )
-
-    password2 = forms.CharField(
-        max_length=30,
-        widget=forms.TextInput(
-            attrs={
-                "type": "password",
-                "class": "form-control",
-            }
-        ),
-        label="Password Confirmation",
-        required=True,
-    )
-
-    # def validate_email(self):
-    #     email = self.cleaned_data['email']
-    #     if User.objects.filter(email__iexact=email, is_active=True).exists():
-    #         raise forms.ValidationError("Email has taken, try another email address. ")
-
-    class Meta(UserCreationForm.Meta):
+    class Meta:
         model = User
+        fields = ['first_name', 'last_name', 'email', 'phone', 'address', 'gender', 'level', 'program']
 
     @transaction.atomic()
     def save(self, commit=True):
         user = super().save(commit=False)
         user.is_student = True
-        user.is_active = True
+        user.is_active = False # Pending admin approval
+        user.username = self.cleaned_data.get("email") # Use email as username
         user.first_name = self.cleaned_data.get("first_name")
         user.last_name = self.cleaned_data.get("last_name")
         user.gender = self.cleaned_data.get("gender")
         user.address = self.cleaned_data.get("address")
         user.phone = self.cleaned_data.get("phone")
-        user.address = self.cleaned_data.get("address")
         user.email = self.cleaned_data.get("email")
+        user.set_unusable_password()
 
         if commit:
             user.save()
