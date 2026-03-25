@@ -1,93 +1,194 @@
-{% extends 'base.html' %}
-{% load i18n %}
+{% extends 'base/dashboard_base.html' %}
+{% load static %}
 
-{% block title %}Pending Approvals | GSMS{% endblock title %}
-{% block page_title %}User Onboarding{% endblock %}
-{% block nav_approvals %}active{% endblock %}
+{% block title %}Pending Approvals - Babcock University GSMS{% endblock %}
 
-{% block content %}
+{% block dashboard_subtitle %}Administrator{% endblock %}
+{% block page_title %}User Approval Queue{% endblock %}
 
-<div class="card">
-    <div class="card-header flex justify-between items-center">
-        <div>
-            <h3 class="card-title">Pending Approvals</h3>
-            <p class="text-xs text-muted mt-1">Review account requests and generate unique passcodes.</p>
-        </div>
-        <span class="badge badge-warning">{{ pending_users|length }} Awaiting</span>
-    </div>
-    <div class="card-body" style="padding: 0;">
-        <table class="table">
-            <thead>
-                <tr>
-                    <th>User Name</th>
-                    <th>Email Address</th>
-                    <th>Role</th>
-                    <th>Matric / Staff ID</th>
-                    <th>Requested On</th>
-                    <th class="text-right">Action</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for u in pending_users %}
-                <tr>
-                    <td style="font-weight: 500;">{{ u.get_full_name }}</td>
-                    <td class="text-muted">{{ u.email }}</td>
-                    <td>
-                        {% if u.is_student %}
-                            <span class="badge badge-success">Student</span>
-                        {% elif u.is_lecturer %}
-                            <span class="badge badge-primary">Lecturer</span>
-                        {% endif %}
-                    </td>
-                    <td class="text-xs font-mono">
-                        {% if u.is_student %}
-                            {{ u.matric_number|default:"—" }}
-                        {% else %}
-                            LECTURER
-                        {% endif %}
-                    </td>
-                    <td class="text-xs text-muted">{{ u.date_joined|date:"M d, Y" }}</td>
-                    <td class="text-right">
-                        <form method="POST" action="{% url 'approve_user' u.pk %}" style="display:inline;">
-                            {% csrf_token %}
-                            <button type="submit" class="btn btn-primary btn-sm" onclick="return confirm('Approve this user and generate their unique passcode?')">
-                                <i class="fas fa-check-circle mr-1"></i> Approve
-                            </button>
-                        </form>
-                    </td>
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="6" class="text-center py-12">
-                        <div class="logo-icon mb-4 mx-auto opacity-20"><i class="fas fa-user-check text-5xl"></i></div>
-                        <p class="text-muted">No pending account requests at the moment.</p>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-</div>
+{% block sidebar_menu %}
+<li><a href="{% url 'admin_dashboard' %}"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+<li><a href="{% url 'pending_approvals' %}" class="active"><i class="fas fa-user-check"></i> Pending Approvals</a></li>
+<li><a href="{% url 'student_list' %}"><i class="fas fa-user-graduate"></i> Students</a></li>
+<li><a href="{% url 'lecturer_list' %}"><i class="fas fa-chalkboard-teacher"></i> Lecturers</a></li>
+<li><a href="{% url 'programs' %}"><i class="fas fa-book"></i> Programs</a></li>
+<li><a href="{% url 'course_allocation_view' %}"><i class="fas fa-tasks"></i> Course Allocation</a></li>
+<li><a href="{% url 'session_list' %}"><i class="fas fa-calendar-alt"></i> Sessions</a></li>
+<li><a href="{% url 'semester_list' %}"><i class="fas fa-calendar"></i> Semesters</a></li>
+<li><a href="/admin/"><i class="fas fa-cog"></i> System Admin</a></li>
+{% endblock %}
 
-{% if messages %}
-<div class="mt-8">
-    <h4 class="text-sm font-bold mb-4 uppercase tracking-wider text-muted">Recent Approvals</h4>
-    {% for message in messages %}
-        {% if 'approved' in message.message|lower %}
-        <div class="card mb-3" style="border-left: 4px solid var(--success);">
-            <div class="card-body py-4 flex justify-between items-center">
+{% block dashboard_content %}
+<!-- Header Stats -->
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="stat-card alert">
+            <div class="d-flex justify-content-between align-items-center">
                 <div>
-                    <span class="text-xs font-bold uppercase text-success">Confirmed</span>
-                    <p class="mt-1">{{ message }}</p>
+                    <h3>{{ total_pending }}</h3>
+                    <p>Pending Approvals</p>
                 </div>
-                <button class="btn btn-ghost btn-sm" onclick="navigator.clipboard.writeText('{{ message }}')">
-                    <i class="fas fa-copy"></i>
-                </button>
+                <i class="fas fa-user-clock fa-3x text-danger opacity-25"></i>
             </div>
         </div>
-        {% endif %}
-    {% endfor %}
+    </div>
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="mb-3"><i class="fas fa-info-circle text-info me-2"></i>Approval Process</h5>
+                <ol class="mb-0">
+                    <li>Review user information carefully</li>
+                    <li>Click "Approve" to generate a passcode</li>
+                    <li>Share the passcode with the user via email</li>
+                    <li>User can then login with their full name and passcode</li>
+                </ol>
+            </div>
+        </div>
+    </div>
 </div>
-{% endif %}
 
-{% endblock content %}
+<!-- Pending Users List -->
+<div class="card">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><i class="fas fa-users me-2"></i>Pending User Registrations</h5>
+        <span class="badge bg-danger">{{ total_pending }} Pending</span>
+    </div>
+    <div class="card-body">
+        {% if pending_users %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Role</th>
+                        <th>Details</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in pending_users %}
+                    <tr>
+                        <td>
+                            <small class="text-muted">{{ user.date_joined|date:"M d, Y" }}</small>
+                            <br>
+                            <small class="text-muted">{{ user.date_joined|time:"h:i A" }}</small>
+                        </td>
+                        <td>
+                            <strong>{{ user.get_full_name }}</strong>
+                            {% if user.honorific %}
+                            <br><small class="text-muted">{{ user.honorific }}</small>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <i class="fas fa-envelope text-muted me-1"></i>{{ user.email }}
+                            {% if user.phone %}
+                            <br><i class="fas fa-phone text-muted me-1"></i>{{ user.phone }}
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if user.is_student %}
+                                <span class="badge bg-info">
+                                    <i class="fas fa-user-graduate me-1"></i>Student
+                                </span>
+                            {% elif user.is_lecturer %}
+                                <span class="badge bg-success">
+                                    <i class="fas fa-chalkboard-teacher me-1"></i>Lecturer
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if user.is_student %}
+                                {% with student=user.student %}
+                                    <small class="d-block"><strong>Matric:</strong> {{ user.matric_number|default:"N/A" }}</small>
+                                    <small class="d-block"><strong>Level:</strong> {{ student.level }}</small>
+                                    <small class="d-block"><strong>Program:</strong> {{ student.program }}</small>
+                                {% endwith %}
+                            {% elif user.is_lecturer %}
+                                <small class="d-block"><strong>Address:</strong> {{ user.address|default:"N/A" }}</small>
+                                <small class="d-block"><strong>Gender:</strong> {{ user.get_gender_display|default:"N/A" }}</small>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="btn-group" role="group">
+                                <a href="{% url 'approve_user' user.pk %}" 
+                                   class="btn btn-sm btn-success"
+                                   onclick="return confirm('Approve {{ user.get_full_name }}? A passcode will be generated.')">
+                                    <i class="fas fa-check me-1"></i>Approve
+                                </a>
+                                <a href="{% url 'reject_user' user.pk %}" 
+                                   class="btn btn-sm btn-danger"
+                                   onclick="return confirm('Reject {{ user.get_full_name }}? This action cannot be undone.')">
+                                    <i class="fas fa-times me-1"></i>Reject
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-check-circle fa-4x text-success mb-3"></i>
+            <h5 class="text-muted">No Pending Approvals</h5>
+            <p class="text-muted">All user registrations have been processed</p>
+            <a href="{% url 'admin_dashboard' %}" class="btn btn-primary mt-3">
+                <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Recently Approved/Rejected (Optional) -->
+<div class="row mt-4">
+    <div class="col-md-6">
+        <div class="card border-success">
+            <div class="card-header bg-success text-white">
+                <h6 class="mb-0"><i class="fas fa-check-circle me-2"></i>Recently Approved</h6>
+            </div>
+            <div class="card-body">
+                {% with approved_users=user.approved_users.all|slice:":5" %}
+                    {% if approved_users %}
+                    <ul class="list-unstyled mb-0">
+                        {% for approved in approved_users %}
+                        <li class="mb-2">
+                            <i class="fas fa-user text-success me-2"></i>
+                            <strong>{{ approved.get_full_name }}</strong>
+                            <br>
+                            <small class="text-muted ms-4">{{ approved.approved_at|timesince }} ago</small>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    {% else %}
+                    <p class="text-muted text-center mb-0">No recent approvals</p>
+                    {% endif %}
+                {% endwith %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card border-danger">
+            <div class="card-header bg-danger text-white">
+                <h6 class="mb-0"><i class="fas fa-times-circle me-2"></i>Recently Rejected</h6>
+            </div>
+            <div class="card-body">
+                <p class="text-muted text-center mb-0">Rejection history available in system logs</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.table td {
+    vertical-align: middle;
+}
+
+.btn-group .btn {
+    white-space: nowrap;
+}
+</style>
+{% endblock %}

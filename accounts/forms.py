@@ -14,39 +14,71 @@ def fc(widget_type="text", extra=None):
     return attrs
 
 
+NIGERIAN_STATES = [
+    ('', '-- Select State --'),
+    ('Abia', 'Abia'), ('Adamawa', 'Adamawa'), ('Akwa Ibom', 'Akwa Ibom'),
+    ('Anambra', 'Anambra'), ('Bauchi', 'Bauchi'), ('Bayelsa', 'Bayelsa'),
+    ('Benue', 'Benue'), ('Borno', 'Borno'), ('Cross River', 'Cross River'),
+    ('Delta', 'Delta'), ('Ebonyi', 'Ebonyi'), ('Edo', 'Edo'),
+    ('Ekiti', 'Ekiti'), ('Enugu', 'Enugu'), ('FCT', 'FCT - Abuja'),
+    ('Gombe', 'Gombe'), ('Imo', 'Imo'), ('Jigawa', 'Jigawa'),
+    ('Kaduna', 'Kaduna'), ('Kano', 'Kano'), ('Katsina', 'Katsina'),
+    ('Kebbi', 'Kebbi'), ('Kogi', 'Kogi'), ('Kwara', 'Kwara'),
+    ('Lagos', 'Lagos'), ('Nasarawa', 'Nasarawa'), ('Niger', 'Niger'),
+    ('Ogun', 'Ogun'), ('Ondo', 'Ondo'), ('Osun', 'Osun'),
+    ('Oyo', 'Oyo'), ('Plateau', 'Plateau'), ('Rivers', 'Rivers'),
+    ('Sokoto', 'Sokoto'), ('Taraba', 'Taraba'), ('Yobe', 'Yobe'),
+    ('Zamfara', 'Zamfara'),
+]
+
+RELIGIONS = [
+    ('', '-- Select --'),
+    ('Christianity', 'Christianity'),
+    ('Islam', 'Islam'),
+    ('Others', 'Others'),
+]
+
+
 # ─── Signup Forms (no password, inactive until admin approves) ─────────────────
 
 class StaffSignupForm(forms.Form):
-    honorific  = forms.ChoiceField(
+    honorific = forms.ChoiceField(
         choices=[
             ('', '-- Select --'), ('Dr.', 'Dr.'), ('Prof.', 'Prof.'),
             ('Mr.', 'Mr.'), ('Mrs.', 'Mrs.'), ('Ms.', 'Ms.'),
         ],
         widget=forms.Select(attrs={"class": "form-select"}),
-        label=_("Honorific"), required=False,
+        label=_("Title / Honorific"), required=False,
     )
-    first_name = forms.CharField(max_length=50, widget=forms.TextInput(attrs=fc()), label=_("First Name"))
-    last_name  = forms.CharField(max_length=50, widget=forms.TextInput(attrs=fc()), label=_("Last Name"))
-    email      = forms.EmailField(widget=forms.TextInput(attrs=fc("email")), label=_("Email Address"))
-    phone      = forms.CharField(max_length=30, widget=forms.TextInput(attrs=fc()), label=_("Phone Number"))
-    address    = forms.CharField(max_length=100, widget=forms.TextInput(attrs=fc()), label=_("Address"))
-    gender     = forms.ChoiceField(choices=GENDERS, widget=forms.Select(attrs={"class": "form-select"}))
+    first_name  = forms.CharField(max_length=50, widget=forms.TextInput(attrs=fc()), label=_("First Name"))
+    last_name   = forms.CharField(max_length=50, widget=forms.TextInput(attrs=fc()), label=_("Last Name"))
+    email       = forms.EmailField(widget=forms.TextInput(attrs=fc("email")), label=_("Email Address"))
+    phone       = forms.CharField(max_length=30, widget=forms.TextInput(attrs=fc("tel")), label=_("Phone Number"))
+    gender      = forms.ChoiceField(choices=GENDERS, widget=forms.Select(attrs={"class": "form-select"}), label=_("Gender"))
+    department  = forms.CharField(max_length=100, widget=forms.TextInput(attrs=fc()), label=_("Department"), required=False)
+    state_of_origin = forms.ChoiceField(
+        choices=NIGERIAN_STATES,
+        widget=forms.Select(attrs={"class": "form-select"}),
+        label=_("State of Origin"), required=False,
+    )
 
     @transaction.atomic()
     def save(self):
         data  = self.cleaned_data
         email = data["email"]
+        # Use email as username to keep it unique
         user  = User(
-            username      = email,
-            email         = email,
-            first_name    = data["first_name"],
-            last_name     = data["last_name"],
-            phone         = data["phone"],
-            address       = data["address"],
-            gender        = data["gender"],
-            honorific     = data.get("honorific", ""),
-            is_lecturer   = True,
-            is_active     = False,
+            username        = email,
+            email           = email,
+            first_name      = data["first_name"],
+            last_name       = data["last_name"],
+            phone           = data["phone"],
+            address         = data.get("state_of_origin", ""),
+            gender          = data["gender"],
+            honorific       = data.get("honorific", ""),
+            is_lecturer     = True,
+            is_active       = False,
+            approval_status = 'pending',
         )
         user.set_unusable_password()
         user.save()
@@ -54,18 +86,27 @@ class StaffSignupForm(forms.Form):
 
 
 class StudentSignupForm(forms.Form):
-    first_name    = forms.CharField(max_length=50, widget=forms.TextInput(attrs=fc()), label=_("First Name"))
-    last_name     = forms.CharField(max_length=50, widget=forms.TextInput(attrs=fc()), label=_("Last Name"))
-    email         = forms.EmailField(widget=forms.TextInput(attrs=fc("email")), label=_("Email Address"))
-    matric_number = forms.CharField(max_length=30, widget=forms.TextInput(attrs=fc()), label=_("Matric Number"))
-    phone         = forms.CharField(max_length=30, widget=forms.TextInput(attrs=fc()), label=_("Phone Number"))
-    address       = forms.CharField(max_length=100, widget=forms.TextInput(attrs=fc()), label=_("Address"))
-    gender        = forms.ChoiceField(choices=GENDERS, widget=forms.Select(attrs={"class": "form-select"}))
-    level         = forms.ChoiceField(choices=LEVEL, widget=forms.Select(attrs={"class": "form-select"}))
-    program       = forms.ModelChoiceField(
+    first_name      = forms.CharField(max_length=50, widget=forms.TextInput(attrs=fc()), label=_("First Name"))
+    last_name       = forms.CharField(max_length=50, widget=forms.TextInput(attrs=fc()), label=_("Last Name"))
+    email           = forms.EmailField(widget=forms.TextInput(attrs=fc("email")), label=_("Email Address"))
+    matric_number   = forms.CharField(max_length=30, widget=forms.TextInput(attrs=fc()), label=_("Matriculation Number"))
+    phone           = forms.CharField(max_length=30, widget=forms.TextInput(attrs=fc("tel")), label=_("Phone Number"))
+    gender          = forms.ChoiceField(choices=GENDERS, widget=forms.Select(attrs={"class": "form-select"}), label=_("Gender"))
+    level           = forms.ChoiceField(choices=LEVEL, widget=forms.Select(attrs={"class": "form-select"}), label=_("Current Level"))
+    program         = forms.ModelChoiceField(
         queryset=Program.objects.all(),
         widget=forms.Select(attrs={"class": "form-select"}),
-        label=_("Program"),
+        label=_("Program / Department"),
+    )
+    state_of_origin = forms.ChoiceField(
+        choices=NIGERIAN_STATES,
+        widget=forms.Select(attrs={"class": "form-select"}),
+        label=_("State of Origin"),
+    )
+    religion        = forms.ChoiceField(
+        choices=RELIGIONS,
+        widget=forms.Select(attrs={"class": "form-select"}),
+        label=_("Religion"), required=False,
     )
 
     @transaction.atomic()
@@ -73,16 +114,17 @@ class StudentSignupForm(forms.Form):
         data  = self.cleaned_data
         email = data["email"]
         user  = User(
-            username      = email,
-            email         = email,
-            first_name    = data["first_name"],
-            last_name     = data["last_name"],
-            phone         = data["phone"],
-            address       = data["address"],
-            gender        = data["gender"],
-            matric_number = data.get("matric_number", ""),
-            is_student    = True,
-            is_active     = False,
+            username        = email,
+            email           = email,
+            first_name      = data["first_name"],
+            last_name       = data["last_name"],
+            phone           = data["phone"],
+            address         = data.get("state_of_origin", ""),
+            gender          = data["gender"],
+            matric_number   = data.get("matric_number", ""),
+            is_student      = True,
+            is_active       = False,
+            approval_status = 'pending',
         )
         user.set_unusable_password()
         user.save()
@@ -194,15 +236,15 @@ class EmailValidationOnForgotPassword(PasswordResetForm):
 
 
 class ParentAddForm(UserCreationForm):
-    first_name   = forms.CharField(max_length=30, widget=forms.TextInput(attrs=fc()), label=_("First Name"))
-    last_name    = forms.CharField(max_length=30, widget=forms.TextInput(attrs=fc()), label=_("Last Name"))
-    email        = forms.EmailField(widget=forms.TextInput(attrs=fc("email")), label=_("Email Address"))
-    address      = forms.CharField(max_length=60, widget=forms.TextInput(attrs=fc()), label=_("Address"))
-    phone        = forms.CharField(max_length=30, widget=forms.TextInput(attrs=fc()), label=_("Mobile No."))
-    student      = forms.ModelChoiceField(queryset=Student.objects.all(), widget=forms.Select(attrs={"class": "form-select"}))
-    relation_ship= forms.ChoiceField(choices=RELATION_SHIP, widget=forms.Select(attrs={"class": "form-select"}))
-    password1    = forms.CharField(max_length=30, widget=forms.TextInput(attrs=fc("password")), label=_("Password"))
-    password2    = forms.CharField(max_length=30, widget=forms.TextInput(attrs=fc("password")), label=_("Confirm Password"))
+    first_name    = forms.CharField(max_length=30, widget=forms.TextInput(attrs=fc()), label=_("First Name"))
+    last_name     = forms.CharField(max_length=30, widget=forms.TextInput(attrs=fc()), label=_("Last Name"))
+    email         = forms.EmailField(widget=forms.TextInput(attrs=fc("email")), label=_("Email Address"))
+    address       = forms.CharField(max_length=60, widget=forms.TextInput(attrs=fc()), label=_("Address"))
+    phone         = forms.CharField(max_length=30, widget=forms.TextInput(attrs=fc()), label=_("Mobile No."))
+    student       = forms.ModelChoiceField(queryset=Student.objects.all(), widget=forms.Select(attrs={"class": "form-select"}))
+    relation_ship = forms.ChoiceField(choices=RELATION_SHIP, widget=forms.Select(attrs={"class": "form-select"}))
+    password1     = forms.CharField(max_length=30, widget=forms.TextInput(attrs=fc("password")), label=_("Password"))
+    password2     = forms.CharField(max_length=30, widget=forms.TextInput(attrs=fc("password")), label=_("Confirm Password"))
 
     class Meta(UserCreationForm.Meta):
         model = User
@@ -218,8 +260,8 @@ class ParentAddForm(UserCreationForm):
         user.email      = self.cleaned_data.get("email")
         user.save()
         Parent.objects.create(
-            user         = user,
-            student      = self.cleaned_data.get("student"),
-            relation_ship= self.cleaned_data.get("relation_ship"),
+            user          = user,
+            student       = self.cleaned_data.get("student"),
+            relation_ship = self.cleaned_data.get("relation_ship"),
         )
         return user

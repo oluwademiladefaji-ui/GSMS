@@ -1,0 +1,224 @@
+{% extends 'base/base.html' %}
+{% load static %}
+
+{% block extra_css %}
+<style>
+    .dashboard-wrapper {
+        display: flex;
+        min-height: 100vh;
+    }
+    
+    .sidebar {
+        width: 260px;
+        background: linear-gradient(180deg, #1a5490 0%, #144070 100%);
+        color: white;
+        position: fixed;
+        height: 100vh;
+        overflow-y: auto;
+        transition: all 0.3s;
+        z-index: 1000;
+    }
+    
+    .sidebar-header {
+        padding: 20px;
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+    
+    .sidebar-header h4 {
+        margin: 0;
+        font-size: 1.1rem;
+        font-weight: 600;
+    }
+    
+    .sidebar-menu {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+    
+    .sidebar-menu li a {
+        display: flex;
+        align-items: center;
+        padding: 12px 20px;
+        color: rgba(255,255,255,0.8);
+        text-decoration: none;
+        transition: all 0.3s;
+    }
+    
+    .sidebar-menu li a:hover,
+    .sidebar-menu li a.active {
+        background: rgba(255,255,255,0.1);
+        color: white;
+    }
+    
+    .sidebar-menu li a i {
+        width: 24px;
+        margin-right: 10px;
+    }
+    
+    .main-content {
+        flex: 1;
+        margin-left: 260px;
+        background: #f8f9fa;
+        min-height: 100vh;
+    }
+    
+    .top-navbar {
+        background: white;
+        padding: 15px 30px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .user-info {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .user-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: var(--primary-color);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+    }
+    
+    .content-area {
+        padding: 30px;
+    }
+    
+    .stat-card {
+        background: white;
+        border-radius: 8px;
+        padding: 20px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        transition: transform 0.3s;
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    
+    .stat-card h3 {
+        font-size: 2rem;
+        font-weight: 700;
+        margin: 0;
+        color: var(--primary-color);
+    }
+    
+    .stat-card p {
+        margin: 5px 0 0 0;
+        color: #6c757d;
+    }
+    
+    .stat-card.alert {
+        border-left: 4px solid var(--danger-color);
+    }
+    
+    .stat-card.success {
+        border-left: 4px solid var(--success-color);
+    }
+    
+    .stat-card.info {
+        border-left: 4px solid var(--info-color);
+    }
+    
+    /* Mobile Responsive */
+    @media (max-width: 768px) {
+        .sidebar {
+            margin-left: -260px;
+        }
+        
+        .sidebar.active {
+            margin-left: 0;
+        }
+        
+        .main-content {
+            margin-left: 0;
+        }
+        
+        .mobile-toggle {
+            display: block !important;
+        }
+    }
+    
+    .mobile-toggle {
+        display: none;
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        cursor: pointer;
+    }
+</style>
+{% endblock %}
+
+{% block navbar %}{% endblock %}
+
+{% block content %}
+<div class="dashboard-wrapper">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <h4><i class="fas fa-graduation-cap me-2"></i>BU GSMS</h4>
+            <small>{% block dashboard_subtitle %}Dashboard{% endblock %}</small>
+        </div>
+        <ul class="sidebar-menu">
+            {% block sidebar_menu %}{% endblock %}
+        </ul>
+    </aside>
+    
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Top Navbar -->
+        <div class="top-navbar">
+            <div>
+                <button class="mobile-toggle" onclick="toggleSidebar()">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <h5 class="mb-0 d-inline-block">{% block page_title %}Dashboard{% endblock %}</h5>
+            </div>
+            <div class="user-info">
+                <div class="user-avatar">
+                    {{ user.first_name.0|upper }}{{ user.last_name.0|upper }}
+                </div>
+                <div>
+                    <div class="fw-bold">{{ user.get_full_name }}</div>
+                    <small class="text-muted">{{ user.get_user_role }}</small>
+                </div>
+                <div class="dropdown">
+                    <button class="btn btn-sm btn-light dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                        <i class="fas fa-ellipsis-v"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a class="dropdown-item" href="{% url 'profile' %}"><i class="fas fa-user me-2"></i>Profile</a></li>
+                        <li><a class="dropdown-item" href="{% url 'edit_profile' %}"><i class="fas fa-cog me-2"></i>Settings</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item text-danger" href="{% url 'logout' %}"><i class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Content Area -->
+        <div class="content-area">
+            {% block dashboard_content %}{% endblock %}
+        </div>
+    </div>
+</div>
+
+<script>
+function toggleSidebar() {
+    document.getElementById('sidebar').classList.toggle('active');
+}
+</script>
+{% endblock %}
+
+{% block footer %}{% endblock %}

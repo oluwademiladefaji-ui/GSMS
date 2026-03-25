@@ -8,3 +8,6 @@ class Invoice(models.Model):
     amount = models.FloatField(null=True, blank=True)
     payment_complete = models.BooleanField(default=False)
     invoice_code = models.CharField(max_length=200, blank=True, null=True)
+
+    def __str__(self):
+        return f"Invoice {self.invoice_code} - {self.user.username}"

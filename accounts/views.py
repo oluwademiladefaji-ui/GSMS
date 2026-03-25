@@ -7,6 +7,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import get_template, render_to_string
 from django.utils.decorators import method_decorator
 from django.utils.crypto import get_random_string
+from django.utils import timezone
 from django.views.generic import CreateView
 from django_filters.views import FilterView
 from xhtml2pdf import pisa
@@ -25,7 +26,7 @@ from accounts.forms import (
 from django.contrib.auth import authenticate, login as auth_login
 
 from accounts.models import Parent, Student, User
-from core.models import Semester, Session, NewsAndEvents
+from core.models import Semester, Session, NewsAndEvents, ActivityLog
 from course.models import Course, Program
 from result.models import TakenCourse
 
@@ -51,22 +52,36 @@ def render_to_pdf(template_name, context):
 
 
 def welcome(request):
-    """Universal landing page with branding and News/Events."""
+    """Universal landing page with branding and News/Events - PUBLIC ACCESS."""
+    # Redirect authenticated users to their dashboard
     if request.user.is_authenticated:
-        return redirect("/")
+        if request.user.is_superuser:
+            return redirect("admin_dashboard")
+        elif request.user.is_lecturer:
+            return redirect("lecturer_dashboard")
+        elif request.user.is_student:
+            return redirect("student_dashboard")
+        return redirect("home")
     
     news_items = NewsAndEvents.objects.all().order_by("-updated_date")[:6]
     context = {
         "news_items": news_items,
+        "title": "Welcome to Babcock University GSMS",
     }
     return render(request, "registration/welcome.html", context)
 
 
 def role_selection(request):
-    """Middleman to choose user role."""
+    """Role selection page - choose between Admin Login, Lecturer Signup, Student Signup."""
     if request.user.is_authenticated:
-        return redirect("/")
-    return render(request, "registration/role_selection.html", {"mode": request.GET.get("mode", "login")})
+        return redirect("welcome")
+    
+    mode = request.GET.get("mode", "signup")  # signup or login
+    context = {
+        "mode": mode,
+        "title": "Select Your Role",
+    }
+    return render(request, "registration/role_selection.html", context)
 
 
 def login_view(request):
@@ -82,32 +97,49 @@ def login_view(request):
 
 
 def custom_login(request):
-    """Case-sensitive full-name + passcode login for students and lecturers.
-    Standard username+password for admin.
+    """
+    Unified login handler:
+    - Admin: Username (BUAdmin) + Password (Admin)
+    - Student/Lecturer: Full Name (case-sensitive) + Passcode
     """
     if request.method != "POST":
         return redirect("welcome")
 
     role = request.POST.get("role")
 
+    # ADMIN LOGIN
     if role == "admin":
-        username = request.POST.get("username", "")
-        password = request.POST.get("password", "")
-        user = authenticate(request, username=username, password=password)
-        if user and user.is_superuser:
-            auth_login(request, user)
-            return redirect("/")
-        request.session["login_error"] = "Invalid admin credentials."
+        username = request.POST.get("username", "").strip()
+        password = request.POST.get("password", "").strip()
+        
+        # Hardcoded admin check
+        if username == "BUAdmin" and password == "Admin":
+            # Authenticate with Django's admin user
+            user = authenticate(request, username=username, password=password)
+            if user and user.is_superuser:
+                auth_login(request, user)
+                messages.success(request, "Welcome, Administrator!")
+                return redirect("admin_dashboard")
+        
+        messages.error(request, "Invalid admin credentials.")
         return redirect(f"/accounts/login/?role=admin")
 
-    # Student / Lecturer: full name (case-sensitive) + passcode
-    full_name = request.POST.get("full_name", "").strip()   # exact case required
-    passcode  = request.POST.get("passcode", "").strip()    # exact case required
+    # STUDENT / LECTURER LOGIN: Full name (case-sensitive) + passcode
+    full_name = request.POST.get("full_name", "").strip()
+    passcode = request.POST.get("passcode", "").strip()
 
+    if not full_name or not passcode:
+        messages.error(request, "Please provide both name and passcode.")
+        return redirect(f"/accounts/login/?role={role}")
+
+    # Filter by role and active status
     if role == "student":
-        qs = User.objects.filter(is_student=True, is_active=True)
+        qs = User.objects.filter(is_student=True, is_active=True, approval_status='approved')
+    elif role == "lecturer":
+        qs = User.objects.filter(is_lecturer=True, is_active=True, approval_status='approved')
     else:
-        qs = User.objects.filter(is_lecturer=True, is_active=True)
+        messages.error(request, "Invalid role selected.")
+        return redirect("welcome")
 
     user = None
     for u in qs:
@@ -119,9 +151,16 @@ def custom_login(request):
     if user:
         user.backend = "django.contrib.auth.backends.ModelBackend"
         auth_login(request, user)
-        return redirect("/")
+        messages.success(request, f"Welcome back, {user.get_full_name}!")
+        
+        # Redirect to appropriate dashboard
+        if user.is_student:
+            return redirect("student_dashboard")
+        elif user.is_lecturer:
+            return redirect("lecturer_dashboard")
+        return redirect("home")
 
-    request.session["login_error"] = "Invalid credentials. Both name and passcode are case-sensitive."
+    messages.error(request, "Invalid credentials. Both name and passcode are case-sensitive.")
     return redirect(f"/accounts/login/?role={role}")
 
 
@@ -132,9 +171,13 @@ def validate_username(request):
 
 
 def register(request):
-    """Refined registration view that handles role-specific signups."""
+    """Registration view for Lecturer and Student signup with approval workflow."""
+    if request.user.is_authenticated:
+        return redirect("welcome")
+    
     if request.method == "POST":
         role = request.POST.get("role", "student")
+        
         if role == "student":
             form = StudentSignupForm(request.POST)
             staff_form = StaffSignupForm()
@@ -145,43 +188,122 @@ def register(request):
             staff_form = form
         
         if form.is_valid():
-            form.save()
-            messages.success(request, "Registration successful! Your account is pending admin approval. You will receive a passcode once approved.")
+            user = form.save()
+            messages.success(
+                request, 
+                f"Registration successful! Your account is pending admin approval. "
+                f"You will receive a passcode via email once approved."
+            )
             return redirect("welcome")
         else:
             messages.error(request, "Please correct the errors below.")
             return render(request, "registration/register.html", {
                 "student_form": student_form,
                 "staff_form": staff_form,
-                "active_tab": role
+                "active_tab": role,
+                "title": "Sign Up",
             })
     else:
         role = request.GET.get("role", "student")
         student_form = StudentSignupForm()
         staff_form = StaffSignupForm()
+    
     return render(request, "registration/register.html", {
         "student_form": student_form,
         "staff_form": staff_form,
-        "active_tab": role
+        "active_tab": role,
+        "title": "Sign Up",
     })
 
 @login_required
 @admin_required
 def pending_approvals(request):
-    pending_users = User.objects.filter(is_active=False, is_superuser=False)
-    return render(request, "accounts/pending_approvals.html", {"pending_users": pending_users, "title": "Pending Approvals"})
+    """Admin view to see all pending user registrations."""
+    pending_users = User.objects.filter(
+        approval_status='pending',
+        is_superuser=False
+    ).order_by('-date_joined')
+    
+    context = {
+        "pending_users": pending_users,
+        "title": "Pending Approvals",
+        "total_pending": pending_users.count(),
+    }
+    return render(request, "accounts/pending_approvals.html", context)
+
 
 @login_required
 @admin_required
 def approve_user(request, pk):
+    """Admin approves a pending user and generates & emails their passcode."""
     user = get_object_or_404(User, pk=pk)
-    if not user.is_active:
-        passcode = get_random_string(6).upper()
-        user.set_password(passcode)
-        user.passcode = passcode
-        user.is_active = True
-        user.save()
-        messages.success(request, f"User {user.get_full_name} approved! Passcode: {passcode}")
+
+    if user.approval_status != 'pending':
+        messages.warning(request, f"User {user.get_full_name} has already been processed.")
+        return redirect("pending_approvals")
+
+    # Generate unique 8-character passcode (mixed case + digits)
+    from django.utils.crypto import get_random_string
+    passcode = get_random_string(8, allowed_chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789')
+
+    user.passcode        = passcode
+    user.approval_status = 'approved'
+    user.is_active       = True
+    user.approved_by     = request.user
+    user.approved_at     = timezone.now()
+    user.save()
+
+    # Send passcode via email
+    role_label = "Student" if user.is_student else "Lecturer"
+    try:
+        from django.core.mail import send_mail
+        from django.conf import settings
+        subject = "GSMS Account Approved – Your Login Passcode"
+        body = (
+            f"Dear {user.get_full_name},\n\n"
+            f"Your {role_label} account on the Babcock University General Studies Management System "
+            f"(GSMS) has been approved.\n\n"
+            f"Your Login Details:\n"
+            f"  Full Name  : {user.get_full_name}\n"
+            f"  Passcode   : {passcode}\n\n"
+            f"To log in:\n"
+            f"1. Visit the GSMS portal and click 'Log In to Dashboard'.\n"
+            f"2. Select your role ({role_label}).\n"
+            f"3. Enter your Full Name exactly as registered and your Passcode.\n\n"
+            f"Note: Both your name and passcode are CASE-SENSITIVE.\n\n"
+            f"If you have questions, contact the GSMS admin.\n\n"
+            f"Babcock University – General Studies Office"
+        )
+        send_mail(subject, body, settings.DEFAULT_FROM_EMAIL, [user.email], fail_silently=True)
+        email_note = f"Passcode emailed to {user.email}."
+    except Exception:
+        email_note = f"Email could not be sent. Passcode: <strong>{passcode}</strong> — share manually."
+
+    messages.success(
+        request,
+        f"✅ {user.get_full_name} approved! {email_note}"
+    )
+    return redirect("pending_approvals")
+
+
+@login_required
+@admin_required
+def reject_user(request, pk):
+    """Admin rejects a pending user registration."""
+    user = get_object_or_404(User, pk=pk)
+    
+    if user.approval_status != 'pending':
+        messages.warning(request, f"User {user.get_full_name} has already been processed.")
+        return redirect("pending_approvals")
+    
+    user.approval_status = 'rejected'
+    user.is_active = False
+    user.save()
+    
+    # TODO: Send rejection email
+    # send_rejection_email(user)
+    
+    messages.info(request, f"User {user.get_full_name} has been rejected.")
     return redirect("pending_approvals")
 
 
@@ -286,7 +408,140 @@ def profile_single(request, user_id):
 @login_required
 @admin_required
 def admin_panel(request):
-    return render(request, "setting/admin_panel.html", {"title": "Admin Panel"})
+    """Legacy admin panel - redirect to new dashboard."""
+    return redirect("admin_dashboard")
+
+
+# ########################################################
+# Dashboard Views (NEW)
+# ########################################################
+
+
+@login_required
+@admin_required
+def admin_dashboard(request):
+    """Main Admin Dashboard – Full Control Center."""
+    from django.db.models import Count
+
+    total_students = User.objects.filter(is_student=True, is_active=True).count()
+    total_lecturers = User.objects.filter(is_lecturer=True, is_active=True).count()
+    pending_count = User.objects.filter(approval_status='pending').count()
+
+    current_session = Session.objects.filter(is_current_session=True).first()
+    current_semester = Semester.objects.filter(is_current_semester=True).first()
+
+    recent_logs = ActivityLog.objects.all().order_by("-created_at")[:10]
+
+    enrollment_data = Course.objects.annotate(
+        student_count=Count('taken_courses')
+    ).order_by('-student_count')[:5]
+
+    context = {
+        "title": "Admin Dashboard",
+        "total_students": total_students,
+        "total_lecturers": total_lecturers,
+        "pending_count": pending_count,
+        "current_session": current_session,
+        "current_semester": current_semester,
+        "recent_logs": recent_logs,
+        "enrollment_data": enrollment_data,
+    }
+
+    return render(request, "accounts/admin_dashboard.html", context)
+
+
+@login_required
+def lecturer_dashboard(request):
+    """
+    Lecturer Dashboard
+    - View allocated courses
+    - Upload materials
+    - Create assessments
+    - Enter scores
+    """
+    if not request.user.is_lecturer and not request.user.is_superuser:
+        messages.error(request, "Access denied. Lecturers only.")
+        return redirect("home")
+    
+    from course.models import Course, CourseAllocation
+    from core.models import Semester, Session
+    
+    current_session = Session.objects.filter(is_current_session=True).first()
+    current_semester = Semester.objects.filter(is_current_semester=True).first()
+    
+    # Get allocated courses
+    allocated_courses = Course.objects.filter(
+        allocated_course__lecturer=request.user
+    ).distinct()
+    
+    if current_semester:
+        current_courses = allocated_courses.filter(semester=current_semester.semester)
+    else:
+        current_courses = allocated_courses
+    
+    context = {
+        "title": "Lecturer Dashboard",
+        "current_session": current_session,
+        "current_semester": current_semester,
+        "allocated_courses": allocated_courses,
+        "current_courses": current_courses,
+        "total_courses": allocated_courses.count(),
+    }
+    
+    return render(request, "accounts/lecturer_dashboard.html", context)
+
+
+@login_required
+def student_dashboard(request):
+    """
+    Student Dashboard
+    - View registered courses
+    - Access materials
+    - Take assessments
+    - View results
+    """
+    if not request.user.is_student and not request.user.is_superuser:
+        messages.error(request, "Access denied. Students only.")
+        return redirect("home")
+    
+    from accounts.models import Student
+    from result.models import TakenCourse, Result
+    from core.models import Semester, Session
+    
+    current_session = Session.objects.filter(is_current_session=True).first()
+    current_semester = Semester.objects.filter(is_current_semester=True).first()
+    
+    try:
+        student = Student.objects.get(student=request.user)
+    except Student.DoesNotExist:
+        messages.error(request, "Student profile not found. Please contact admin.")
+        return redirect("home")
+    
+    # Get registered courses
+    registered_courses = TakenCourse.objects.filter(student=student)
+    
+    if current_semester:
+        current_courses = registered_courses.filter(
+            course__semester=current_semester.semester
+        )
+    else:
+        current_courses = registered_courses
+    
+    # Get latest results
+    latest_results = Result.objects.filter(student=student).order_by('-id')[:3]
+    
+    context = {
+        "title": "Student Dashboard",
+        "student": student,
+        "current_session": current_session,
+        "current_semester": current_semester,
+        "registered_courses": registered_courses,
+        "current_courses": current_courses,
+        "latest_results": latest_results,
+        "total_courses": registered_courses.count(),
+    }
+    
+    return render(request, "accounts/student_dashboard.html", context)
 
 
 # ########################################################

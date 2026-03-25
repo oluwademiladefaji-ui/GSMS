@@ -4,146 +4,254 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Registration | GSMS — Babcock University</title>
+    <title>Register | GSMS — Babcock University</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="{% static 'css/gsms.css' %}">
     <style>
-        body {
-            background-color: #f8fafc;
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 2rem;
-        }
-        .register-card {
-            background: white;
-            border: 1px solid #e2e8f0;
-            border-radius: 24px;
-            width: 100%;
-            max-width: 550px;
-            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.08);
-            overflow: hidden;
-            animation: slideUp 0.4s ease-out;
-        }
-        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        body { background: #f8fafc; min-height: 100vh; padding: 2rem 1rem; }
+        .page-wrap { max-width: 700px; margin: 0 auto; animation: fadeUp 0.4s ease-out; }
+        @keyframes fadeUp { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:translateY(0); } }
         
-        .header-accent {
-            background: linear-gradient(135deg, #1d4ed8, #3b82f6);
-            padding: 40px; text-align: center; color: white;
-        }
-        .header-accent.lecturer { background: linear-gradient(135deg, #7c3aed, #8b5cf6); }
-        .form-container { padding: 40px; }
+        .tab-bar { display: flex; gap: 0; background: white; border: 1px solid #e2e8f0; border-radius: 16px; overflow: hidden; margin-bottom: 24px; }
+        .tab { flex: 1; padding: 14px; text-align: center; font-size: 0.875rem; font-weight: 600; cursor: pointer; color: #64748b; border-bottom: 3px solid transparent; transition: all 0.25s; }
+        .tab.active { color: #1d4ed8; border-bottom-color: #1d4ed8; background: #eff6ff; }
         
-        .form-title { font-size: 1.5rem; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 8px; }
-        .form-desc { font-size: 0.875rem; color: #64748b; line-height: 1.5; margin-bottom: 24px; }
+        .step-indicator { display: flex; gap: 8px; align-items: center; margin-bottom: 28px; }
+        .step { width: 28px; height: 28px; border-radius: 50%; font-size: 0.75rem; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+        .step.done { background: #1d4ed8; color: white; }
+        .step.pending { background: #e2e8f0; color: #94a3b8; }
+        .step-line { flex: 1; height: 2px; background: #e2e8f0; }
+        
+        .info-box { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 12px; padding: 16px 20px; margin-bottom: 24px; }
+        .info-box h4 { font-weight: 700; font-size: 0.875rem; color: #1d4ed8; margin-bottom: 8px; }
+        .info-box ul { margin: 0; padding-left: 16px; font-size: 0.8rem; color: #374151; line-height: 1.8; }
+        
+        .form-group { margin-bottom: 20px; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        @media(max-width: 600px) { .form-row { grid-template-columns: 1fr; } }
+        
+        .section-header { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #94a3b8; margin: 24px 0 16px; padding-bottom: 8px; border-bottom: 1px solid #f1f5f9; }
+        
+        .success-banner { background: #f0fdf4; border: 1px solid #86efac; border-radius: 12px; padding: 20px; margin-bottom: 24px; text-align: center; }
+        .success-banner i { font-size: 2.5rem; color: #16a34a; margin-bottom: 12px; display: block; }
     </style>
 </head>
 <body>
+<div class="page-wrap">
 
-    <div class="register-card">
-        <div class="header-accent {% if active_tab == 'lecturer' %}lecturer{% endif %}">
-            <div class="logo-icon mx-auto mb-4" style="background:rgba(255,255,255,0.2); width:48px; height:48px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:1.25rem;"><i class="fas fa-{% if active_tab == 'student' %}user-graduate{% else %}chalkboard-teacher{% endif %}"></i></div>
-            <h2 class="mb-0 fw-bold">{% if active_tab == 'student' %}Student{% else %}Lecturer{% endif %} Account Request</h2>
+    <!-- Header -->
+    <div class="text-center mb-8">
+        <div style="width:48px; height:48px; background:#1d4ed8; border-radius:12px; display:inline-flex; align-items:center; justify-content:center; margin-bottom:16px;">
+            <i class="fas fa-university text-white text-xl"></i>
         </div>
+        <h1 style="font-size:1.75rem; font-weight:800; letter-spacing:-0.5px;">Create Your Account</h1>
+        <p class="text-muted mt-2">Babcock University — General Studies Management System</p>
+    </div>
 
-        <div class="form-container">
-            {% if messages %}
-                {% for message in messages %}
-                <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} mb-4">
-                    <i class="fas fa-info-circle mr-2"></i> {{ message }}
-                </div>
-                {% endfor %}
-            {% endif %}
+    {% if messages %}
+    {% for message in messages %}
+    <div class="{% if message.tags == 'error' %}alert alert-danger{% else %}success-banner{% endif %} mb-6">
+        {% if message.tags != 'error' %}<i class="fas fa-check-circle"></i>{% endif %}
+        {{ message|safe }}
+    </div>
+    {% endfor %}
+    {% endif %}
 
-            <div class="form-desc text-center">
-                Submit the form below. An administrator will review your application and issue a unique passcode for login via the welcome page.
+    <!-- How it works info box -->
+    <div class="info-box mb-6">
+        <h4><i class="fas fa-info-circle mr-2"></i> How Registration Works</h4>
+        <ul>
+            <li>Fill in your details below and submit the form.</li>
+            <li>Your account will be reviewed by the <strong>GSMS Admin</strong>.</li>
+            <li>Once approved, a unique <strong>Passcode</strong> will be sent to your email address.</li>
+            <li>Use your <strong>Full Name</strong> + <strong>Passcode</strong> to log in (both are case-sensitive).</li>
+        </ul>
+    </div>
+
+    <!-- Role Tabs -->
+    <div class="tab-bar">
+        <div class="tab {% if active_tab == 'student' %}active{% endif %}" onclick="switchTab('student')">
+            <i class="fas fa-user-graduate mr-2"></i> Student
+        </div>
+        <div class="tab {% if active_tab == 'lecturer' %}active{% endif %}" onclick="switchTab('lecturer')">
+            <i class="fas fa-chalkboard-teacher mr-2"></i> Lecturer
+        </div>
+    </div>
+
+    <!-- ─── STUDENT FORM ─────────────────────────── -->
+    <div id="form-student" style="{% if active_tab != 'student' %}display:none;{% endif %}">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-user-graduate mr-2 text-primary"></i> Student Registration</h3>
+                <p class="text-xs text-muted mt-1">Fill in your accurate details. They will be verified by the Admin.</p>
             </div>
+            <div class="card-body">
+                <form method="POST" action="{% url 'register' %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="role" value="student">
 
-            <form action="{% url 'register' %}" method="POST">
-                {% csrf_token %}
-                <input type="hidden" name="role" value="{{ active_tab }}">
-                
-                {% if active_tab == 'student' %}
-                    <!-- Student Specific Form -->
+                    <div class="section-header">Personal Information</div>
                     <div class="form-row">
                         <div class="form-group">
-                            <label class="form-label">First Name</label>
+                            <label class="form-label">First Name <span class="text-danger">*</span></label>
                             {{ student_form.first_name }}
-                            {% if student_form.first_name.errors %}<div class="form-error">{{ student_form.first_name.errors }}</div>{% endif %}
+                            {% if student_form.first_name.errors %}<p class="text-danger text-xs mt-1">{{ student_form.first_name.errors.0 }}</p>{% endif %}
                         </div>
                         <div class="form-group">
-                            <label class="form-label">Last Name</label>
+                            <label class="form-label">Last Name <span class="text-danger">*</span></label>
                             {{ student_form.last_name }}
-                            {% if student_form.last_name.errors %}<div class="form-error">{{ student_form.last_name.errors }}</div>{% endif %}
+                            {% if student_form.last_name.errors %}<p class="text-danger text-xs mt-1">{{ student_form.last_name.errors.0 }}</p>{% endif %}
                         </div>
                     </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Gender <span class="text-danger">*</span></label>
+                            {{ student_form.gender }}
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">State of Origin <span class="text-danger">*</span></label>
+                            {{ student_form.state_of_origin }}
+                        </div>
+                    </div>
+
                     <div class="form-group">
-                        <label class="form-label">Email Address</label>
+                        <label class="form-label">Religion</label>
+                        {{ student_form.religion }}
+                    </div>
+
+                    <div class="section-header">Contact Details</div>
+                    <div class="form-group">
+                        <label class="form-label">Email Address <span class="text-danger">*</span></label>
                         {{ student_form.email }}
-                        {% if student_form.email.errors %}<div class="form-error">{{ student_form.email.errors }}</div>{% endif %}
+                        <p class="form-hint">Your passcode will be sent to this email. Use a working address.</p>
+                        {% if student_form.email.errors %}<p class="text-danger text-xs mt-1">{{ student_form.email.errors.0 }}</p>{% endif %}
                     </div>
                     <div class="form-group">
-                        <label class="form-label">Matric Number</label>
+                        <label class="form-label">Phone Number <span class="text-danger">*</span></label>
+                        {{ student_form.phone }}
+                    </div>
+
+                    <div class="section-header">Academic Details</div>
+                    <div class="form-group">
+                        <label class="form-label">Matriculation Number <span class="text-danger">*</span></label>
                         {{ student_form.matric_number }}
+                        <p class="form-hint">e.g. 22/0623 or BU/22/0623</p>
+                        {% if student_form.matric_number.errors %}<p class="text-danger text-xs mt-1">{{ student_form.matric_number.errors.0 }}</p>{% endif %}
                     </div>
                     <div class="form-row">
                         <div class="form-group">
-                            <label class="form-label">Level</label>
+                            <label class="form-label">Current Level <span class="text-danger">*</span></label>
                             {{ student_form.level }}
                         </div>
                         <div class="form-group">
-                            <label class="form-label">Gender</label>
-                            {{ student_form.gender }}
+                            <label class="form-label">Program / Department <span class="text-danger">*</span></label>
+                            {{ student_form.program }}
                         </div>
                     </div>
+
+                    {% if student_form.non_field_errors %}
+                    <div class="alert alert-danger">{{ student_form.non_field_errors }}</div>
+                    {% endif %}
+
+                    <button type="submit" class="btn btn-primary w-full btn-lg mt-4">
+                        <i class="fas fa-paper-plane mr-2"></i> Submit Registration
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- ─── LECTURER FORM ─────────────────────────── -->
+    <div id="form-lecturer" style="{% if active_tab != 'lecturer' %}display:none;{% endif %}">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-chalkboard-teacher mr-2" style="color:var(--secondary)"></i> Lecturer Registration</h3>
+                <p class="text-xs text-muted mt-1">Academic staff registration. Pending admin approval before access is granted.</p>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{% url 'register' %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="role" value="lecturer">
+
+                    <div class="section-header">Personal Information</div>
                     <div class="form-group">
-                        <label class="form-label">Program</label>
-                        {{ student_form.program }}
-                    </div>
-                {% else %}
-                    <!-- Lecturer Specific Form -->
-                     <div class="form-group">
-                        <label class="form-label">Honorific</label>
+                        <label class="form-label">Title / Honorific</label>
                         {{ staff_form.honorific }}
                     </div>
                     <div class="form-row">
                         <div class="form-group">
-                            <label class="form-label">First Name</label>
+                            <label class="form-label">First Name <span class="text-danger">*</span></label>
                             {{ staff_form.first_name }}
+                            {% if staff_form.first_name.errors %}<p class="text-danger text-xs mt-1">{{ staff_form.first_name.errors.0 }}</p>{% endif %}
                         </div>
                         <div class="form-group">
-                            <label class="form-label">Last Name</label>
+                            <label class="form-label">Last Name <span class="text-danger">*</span></label>
                             {{ staff_form.last_name }}
+                            {% if staff_form.last_name.errors %}<p class="text-danger text-xs mt-1">{{ staff_form.last_name.errors.0 }}</p>{% endif %}
                         </div>
                     </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Gender <span class="text-danger">*</span></label>
+                            {{ staff_form.gender }}
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">State of Origin</label>
+                            {{ staff_form.state_of_origin }}
+                        </div>
+                    </div>
+
+                    <div class="section-header">Contact & Academic Details</div>
                     <div class="form-group">
-                        <label class="form-label">Email Address</label>
+                        <label class="form-label">Email Address <span class="text-danger">*</span></label>
                         {{ staff_form.email }}
+                        <p class="form-hint">Your login passcode will be sent to this email once approved.</p>
+                        {% if staff_form.email.errors %}<p class="text-danger text-xs mt-1">{{ staff_form.email.errors.0 }}</p>{% endif %}
                     </div>
                     <div class="form-row">
                         <div class="form-group">
-                            <label class="form-label">Phone</label>
+                            <label class="form-label">Phone Number <span class="text-danger">*</span></label>
                             {{ staff_form.phone }}
                         </div>
                         <div class="form-group">
-                            <label class="form-label">Gender</label>
-                            {{ staff_form.gender }}
+                            <label class="form-label">Department</label>
+                            {{ staff_form.department }}
                         </div>
                     </div>
-                {% endif %}
 
-                <button type="submit" class="btn btn-primary w-full btn-lg mt-4">
-                    <i class="fas fa-paper-plane mr-2"></i> Submit Application
-                </button>
-            </form>
+                    {% if staff_form.non_field_errors %}
+                    <div class="alert alert-danger">{{ staff_form.non_field_errors }}</div>
+                    {% endif %}
 
-            <div class="text-center mt-8">
-                <a href="{% url 'role_selection' %}" class="btn btn-ghost"><i class="fas fa-arrow-left mr-2"></i> Change role</a>
+                    <button type="submit" class="btn w-full btn-lg mt-4" style="background:var(--secondary); color:white;">
+                        <i class="fas fa-paper-plane mr-2"></i> Submit Registration
+                    </button>
+                </form>
             </div>
         </div>
     </div>
+
+    <!-- Back link -->
+    <div class="text-center mt-8">
+        <a href="{% url 'role_selection' %}?mode=login" class="btn btn-ghost">
+            <i class="fas fa-arrow-left mr-2"></i> Already have an account? Log In
+        </a>
+    </div>
+
+</div>
+
+<script>
+function switchTab(role) {
+    document.getElementById('form-student').style.display = role === 'student' ? 'block' : 'none';
+    document.getElementById('form-lecturer').style.display = role === 'lecturer' ? 'block' : 'none';
+    document.querySelectorAll('.tab').forEach((t, i) => {
+        t.classList.toggle('active', (i === 0 && role === 'student') || (i === 1 && role === 'lecturer'));
+    });
+}
+</script>
 
 </body>
 </html>

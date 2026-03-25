@@ -1,110 +1,234 @@
-{% load static i18n %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Role Selection | GSMS — Babcock University</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <link rel="stylesheet" href="{% static 'css/gsms.css' %}">
-    <style>
-        body {
-            background-color: #f8fafc;
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 2rem;
-        }
-        .container {
-            width: 100%;
-            max-width: 900px;
-            animation: slideUp 0.4s cubic-bezier(.34,1.56,.64,1);
-        }
-        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        
-        .role-card {
-            background: white;
-            border: 1px solid #e2e8f0;
-            border-radius: 20px;
-            padding: 40px 30px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s cubic-bezier(.34,1.56,.64,1);
-            position: relative;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-        .role-card:hover {
-            transform: translateY(-8px);
-            border-color: #1d4ed8;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.04);
-        }
-        .role-icon {
-            width: 80px; height: 80px;
-            border-radius: 24px;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 2rem;
-            margin-bottom: 24px;
-            color: white;
-            transition: transform 0.3s;
-        }
-        .role-card:hover .role-icon { transform: scale(1.1) rotate(-3deg); }
-        
-        .icon-student { background: linear-gradient(135deg, #1d4ed8, #3b82f6); }
-        .icon-lecturer { background: linear-gradient(135deg, #7c3aed, #8b5cf6); }
-        .icon-admin { background: linear-gradient(135deg, #0f172a, #334155); }
-        
-        .role-card h3 {
-            font-size: 1.5rem; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 12px;
-        }
-        .role-card p {
-            color: #64748b; font-size: 0.875rem; line-height: 1.6;
-        }
-    </style>
-</head>
-<body>
+{% extends 'base/public_base.html' %}
+{% load static %}
 
+{% block title %}Select Your Role - Babcock University GSMS{% endblock %}
+
+{% block extra_css %}
+<style>
+    .role-selection-container {
+        min-height: 80vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 50px 0;
+    }
+    
+    .role-selection-box {
+        background: white;
+        border-radius: 15px;
+        padding: 40px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        max-width: 900px;
+        width: 100%;
+    }
+    
+    .role-selection-box h2 {
+        text-align: center;
+        margin-bottom: 10px;
+        color: #1a5490;
+        font-weight: 700;
+    }
+    
+    .role-selection-box p {
+        text-align: center;
+        color: #6c757d;
+        margin-bottom: 40px;
+    }
+    
+    .role-cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 25px;
+    }
+    
+    .role-card {
+        background: white;
+        border: 2px solid #e9ecef;
+        border-radius: 12px;
+        padding: 30px;
+        text-align: center;
+        text-decoration: none;
+        color: inherit;
+        transition: all 0.3s;
+        cursor: pointer;
+    }
+    
+    .role-card:hover {
+        border-color: #1a5490;
+        transform: translateY(-10px);
+        box-shadow: 0 10px 30px rgba(26, 84, 144, 0.2);
+    }
+    
+    .role-card.admin {
+        border-color: #dc3545;
+    }
+    
+    .role-card.admin:hover {
+        border-color: #dc3545;
+        box-shadow: 0 10px 30px rgba(220, 53, 69, 0.2);
+    }
+    
+    .role-card.lecturer {
+        border-color: #28a745;
+    }
+    
+    .role-card.lecturer:hover {
+        border-color: #28a745;
+        box-shadow: 0 10px 30px rgba(40, 167, 69, 0.2);
+    }
+    
+    .role-card.student {
+        border-color: #17a2b8;
+    }
+    
+    .role-card.student:hover {
+        border-color: #17a2b8;
+        box-shadow: 0 10px 30px rgba(23, 162, 184, 0.2);
+    }
+    
+    .role-icon {
+        width: 80px;
+        height: 80px;
+        margin: 0 auto 20px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2.5rem;
+        transition: all 0.3s;
+    }
+    
+    .role-card.admin .role-icon {
+        background: rgba(220, 53, 69, 0.1);
+        color: #dc3545;
+    }
+    
+    .role-card.lecturer .role-icon {
+        background: rgba(40, 167, 69, 0.1);
+        color: #28a745;
+    }
+    
+    .role-card.student .role-icon {
+        background: rgba(23, 162, 184, 0.1);
+        color: #17a2b8;
+    }
+    
+    .role-card:hover .role-icon {
+        transform: scale(1.1);
+    }
+    
+    .role-card h3 {
+        font-size: 1.5rem;
+        font-weight: 600;
+        margin-bottom: 10px;
+    }
+    
+    .role-card p {
+        color: #6c757d;
+        margin: 0;
+        font-size: 0.95rem;
+    }
+    
+    .back-link {
+        text-align: center;
+        margin-top: 30px;
+    }
+    
+    @media (max-width: 768px) {
+        .role-cards {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block page_content %}
+<div class="role-selection-container">
     <div class="container">
-        <div class="text-center mb-12">
-            <div class="logo-icon mx-auto mb-4" style="background:#1d4ed8; width:56px; height:56px; border-radius:14px; display:flex; align-items:center; justify:center; color:white; font-size:1.5rem;"><i class="fas fa-university"></i></div>
-            <h1 style="font-size: 2.25rem; font-weight: 800; letter-spacing: -1px;">GSMS Role Selection</h1>
-            <p class="text-muted mt-2">Identify your primary role to proceed to {{ mode }}</p>
-        </div>
-
-        <div class="grid-3">
-            <!-- Student -->
-            <div class="role-card" onclick="window.location.href='{% if mode == 'signup' %}{% url 'register' %}?role=student{% else %}{% url 'login' %}?role=student{% endif %}'">
-                <div class="role-icon icon-student"><i class="fas fa-user-graduate"></i></div>
-                <h3>Student</h3>
-                <p>Register for GS courses, take assessments, and view your results.</p>
-                <div class="btn btn-primary w-full mt-6">{% if mode == 'signup' %}Register Now{% else %}Access Portal{% endif %}</div>
+        <div class="role-selection-box">
+            <h2>
+                {% if mode == 'signup' %}
+                    Sign Up As
+                {% else %}
+                    Log In As
+                {% endif %}
+            </h2>
+            <p>Select your role to continue</p>
+            
+            <div class="role-cards">
+                <!-- Admin Card -->
+                <a href="{% url 'login' %}?role=admin" class="role-card admin">
+                    <div class="role-icon">
+                        <i class="fas fa-user-shield"></i>
+                    </div>
+                    <h3>Administrator</h3>
+                    <p>System Management & Control</p>
+                    <small class="text-muted d-block mt-2">
+                        {% if mode == 'signup' %}
+                            <i class="fas fa-lock me-1"></i>Admin accounts cannot be created
+                        {% else %}
+                            <i class="fas fa-sign-in-alt me-1"></i>Login only
+                        {% endif %}
+                    </small>
+                </a>
+                
+                <!-- Lecturer Card -->
+                {% if mode == 'signup' %}
+                <a href="{% url 'register' %}?role=lecturer" class="role-card lecturer">
+                    <div class="role-icon">
+                        <i class="fas fa-chalkboard-teacher"></i>
+                    </div>
+                    <h3>Lecturer</h3>
+                    <p>Teaching & Assessment</p>
+                    <small class="text-muted d-block mt-2">
+                        <i class="fas fa-user-plus me-1"></i>Create account
+                    </small>
+                </a>
+                {% else %}
+                <a href="{% url 'login' %}?role=lecturer" class="role-card lecturer">
+                    <div class="role-icon">
+                        <i class="fas fa-chalkboard-teacher"></i>
+                    </div>
+                    <h3>Lecturer</h3>
+                    <p>Teaching & Assessment</p>
+                    <small class="text-muted d-block mt-2">
+                        <i class="fas fa-sign-in-alt me-1"></i>Login with passcode
+                    </small>
+                </a>
+                {% endif %}
+                
+                <!-- Student Card -->
+                {% if mode == 'signup' %}
+                <a href="{% url 'register' %}?role=student" class="role-card student">
+                    <div class="role-icon">
+                        <i class="fas fa-user-graduate"></i>
+                    </div>
+                    <h3>Student</h3>
+                    <p>Learning & Courses</p>
+                    <small class="text-muted d-block mt-2">
+                        <i class="fas fa-user-plus me-1"></i>Create account
+                    </small>
+                </a>
+                {% else %}
+                <a href="{% url 'login' %}?role=student" class="role-card student">
+                    <div class="role-icon">
+                        <i class="fas fa-user-graduate"></i>
+                    </div>
+                    <h3>Student</h3>
+                    <p>Learning & Courses</p>
+                    <small class="text-muted d-block mt-2">
+                        <i class="fas fa-sign-in-alt me-1"></i>Login with passcode
+                    </small>
+                </a>
+                {% endif %}
             </div>
-
-            <!-- Lecturer -->
-            <div class="role-card" onclick="window.location.href='{% if mode == 'signup' %}{% url 'register' %}?role=lecturer{% else %}{% url 'login' %}?role=lecturer{% endif %}'">
-                <div class="role-icon icon-lecturer"><i class="fas fa-chalkboard-teacher"></i></div>
-                <h3>Lecturer</h3>
-                <p>Manage allocated courses, upload materials and grade student work.</p>
-                <div class="btn btn-outline w-full mt-6">{% if mode == 'signup' %}Sign Up{% else %}Log In{% endif %}</div>
+            
+            <div class="back-link">
+                <a href="{% url 'welcome' %}" class="text-muted">
+                    <i class="fas fa-arrow-left me-1"></i>Back to Home
+                </a>
             </div>
-
-            <!-- Admin -->
-            <div class="role-card" onclick="window.location.href='{% url 'login' %}?role=admin'">
-                <div class="role-icon icon-admin"><i class="fas fa-user-shield"></i></div>
-                <h3>Admin</h3>
-                <p>Full system control, user approvals, and course allocations.</p>
-                <div class="btn btn-secondary w-full mt-6">Admin Panel</div>
-            </div>
-        </div>
-
-        <div class="text-center mt-12">
-            <a href="{% url 'welcome' %}" class="btn btn-ghost"><i class="fas fa-arrow-left mr-2"></i> Back to Homepage</a>
         </div>
     </div>
-
-</body>
-</html>
+</div>
+{% endblock %}

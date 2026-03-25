@@ -144,20 +144,28 @@ def gopay_charge(request):
 
 
 def paymentComplete(request):
-    print(request.is_ajax())
-    if request.is_ajax() or request.method == "POST":
-        invoice_id = request.session["invoice_session"]
-        invoice = Invoice.objects.get(id=invoice_id)
-        invoice.payment_complete = True
-        invoice.save()
-        # return redirect('invoice', invoice.invoice_code)
-    body = json.loads(request.body)
-    print("BODY:", body)
+    # Django 3.1+ removed is_ajax(), check for XMLHttpRequest header instead
+    is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+    
+    if is_ajax or request.method == "POST":
+        invoice_code = request.session.get("invoice_session")
+        if invoice_code:
+            invoice = Invoice.objects.get(invoice_code=invoice_code)
+            invoice.payment_complete = True
+            invoice.save()
+            # return redirect('invoice_detail', slug=invoice.invoice_code)
+    
+    if request.body:
+        body = json.loads(request.body)
+        print("BODY:", body)
+    
     return JsonResponse("Payment completed!", safe=False)
 
 
 def create_invoice(request):
-    print(request.is_ajax())
+    # Django 3.1+ removed is_ajax(), check for XMLHttpRequest header instead
+    is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+    
     if request.method == "POST":
         invoice = Invoice.objects.create(
             user=request.user,
@@ -167,13 +175,6 @@ def create_invoice(request):
         )
         request.session["invoice_session"] = invoice.invoice_code
         return redirect("payment_gateways")
-    # if request.is_ajax():
-    #     invoice = Invoice.objects.create(
-    #         user = request.user,
-    #         amount = 15,
-    #         total=26,
-    #     )
-    #     return JsonResponse({'invoice': invoice}, status=201) # created
 
     return render(
         request,

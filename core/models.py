@@ -91,3 +91,26 @@ class ActivityLog(models.Model):
 
     def __str__(self):
         return f"[{self.created_at}]{self.message}"
+
+
+class ExamControl(models.Model):
+    """Admin-controlled exam activation system"""
+    session = models.ForeignKey(Session, on_delete=models.CASCADE)
+    semester = models.ForeignKey(Semester, on_delete=models.CASCADE)
+    is_active = models.BooleanField(default=False, help_text=_("Exam mode active"))
+    activated_at = models.DateTimeField(null=True, blank=True)
+    activated_by = models.ForeignKey(
+        'accounts.User',
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='activated_exams'
+    )
+    
+    class Meta:
+        unique_together = ['session', 'semester']
+        verbose_name = _("Exam Control")
+        verbose_name_plural = _("Exam Controls")
+    
+    def __str__(self):
+        status = "Active" if self.is_active else "Inactive"
+        return f"{self.session} - {self.semester} ({status})"

@@ -10,14 +10,19 @@ from course.models import Program
 from .validators import ASCIIUsernameValidator
 
 
-# LEVEL_COURSE = "Level course"
-BACHELOR_DEGREE = _("Bachelor")
-MASTER_DEGREE = _("Master")
+# Nigerian University Year Levels
+LEVEL_100 = "100"
+LEVEL_200 = "200"
+LEVEL_300 = "300"
+LEVEL_400 = "400"
+LEVEL_500 = "500"
 
 LEVEL = (
-    # (LEVEL_COURSE, "Level course"),
-    (BACHELOR_DEGREE, _("Bachelor Degree")),
-    (MASTER_DEGREE, _("Master Degree")),
+    (LEVEL_100, "100 Level"),
+    (LEVEL_200, "200 Level"),
+    (LEVEL_300, "300 Level"),
+    (LEVEL_400, "400 Level"),
+    (LEVEL_500, "500 Level"),
 )
 
 FATHER = _("Father")
@@ -83,6 +88,27 @@ class User(AbstractUser):
     # Phase 1 additions
     matric_number = models.CharField(max_length=30, blank=True, null=True, unique=False, help_text=_("Student matric number"))
     honorific = models.CharField(max_length=20, blank=True, null=True, help_text=_("e.g. Dr., Prof., Mr., Mrs."))
+    
+    # New fields for approval system
+    approval_status = models.CharField(
+        max_length=20,
+        choices=[
+            ('pending', 'Pending'),
+            ('approved', 'Approved'),
+            ('rejected', 'Rejected'),
+        ],
+        default='approved',
+        help_text=_("User approval status")
+    )
+    approved_by = models.ForeignKey(
+        'self',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='approved_users',
+        help_text=_("Admin who approved this user")
+    )
+    approved_at = models.DateTimeField(null=True, blank=True)
 
     username_validator = ASCIIUsernameValidator()
 

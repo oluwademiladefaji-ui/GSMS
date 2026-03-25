@@ -62,7 +62,6 @@ PROJECT_APPS = [
     "accounts.apps.AccountsConfig",
     "course.apps.CourseConfig",
     "result.apps.ResultConfig",
-    "search.apps.SearchConfig",
     "quiz.apps.QuizConfig",
 ]
 
@@ -208,9 +207,13 @@ EMAIL_USE_SSL = False
 CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
 CRISPY_TEMPLATE_PACK = "bootstrap5"
 
-LOGIN_URL = "/accounts/welcome/"
-LOGIN_REDIRECT_URL = "/"
+LOGIN_URL = "/accounts/login/"
+LOGIN_REDIRECT_URL = "/dashboard/"
 LOGOUT_REDIRECT_URL = "/accounts/welcome/"
+
+# Admin credentials (hardcoded for security)
+ADMIN_USERNAME = "BUAdmin"
+ADMIN_DEFAULT_PASSWORD = "Admin"  # Change in production
 
 
 AUTHENTICATION_BACKENDS = [
@@ -244,8 +247,8 @@ LOGGING = {
 # WhiteNoise configuration
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
-STUDENT_ID_PREFIX = config("STUDENT_ID_PREFIX", "ugr")
-LECTURER_ID_PREFIX = config("LECTURER_ID_PREFIX", "lec")
+STUDENT_ID_PREFIX = config("STUDENT_ID_PREFIX", default="ugr")
+LECTURER_ID_PREFIX = config("LECTURER_ID_PREFIX", default="lec")
 
 
 # Constants
