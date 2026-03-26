@@ -1,0 +1,223 @@
+{% extends 'base_apple.html' %}
+{% load static %}
+
+{% block title %}Pending Approvals — GSMS{% endblock %}
+{% block page_title %}Pending Approvals{% endblock %}
+{% block nav_approvals %}active{% endblock %}
+
+{% block extra_css %}
+<style>
+  .dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: var(--space-4);
+    margin-bottom: var(--space-5);
+  }
+
+  .stat-card {
+    background: var(--color-bg-primary);
+    border-radius: var(--radius-lg);
+    padding: var(--space-4);
+    box-shadow: var(--shadow-sm);
+    transition: all var(--transition-base);
+    border-left: 4px solid transparent;
+  }
+
+  .stat-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-md);
+  }
+
+  .stat-card.warning { border-left-color: var(--color-warning); }
+
+  .stat-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--space-3);
+  }
+
+  .stat-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: white;
+    background: linear-gradient(135deg, rgba(255, 149, 0, 0.95), rgba(255, 149, 0, 0.35));
+  }
+
+  .stat-value {
+    font-size: var(--font-size-4xl);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text-primary);
+    line-height: 1;
+    margin-bottom: var(--space-1);
+  }
+
+  .stat-label {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+    font-weight: var(--font-weight-medium);
+  }
+
+  .section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--space-4);
+    gap: var(--space-3);
+  }
+
+  .section-title {
+    font-size: var(--font-size-2xl);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-primary);
+    margin: 0;
+  }
+
+  .approval-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: var(--space-4);
+  }
+
+  .approval-card .meta-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2);
+    margin-bottom: var(--space-3);
+  }
+
+  .approval-card .name {
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-primary);
+  }
+
+  .approval-card .detail {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+    line-height: var(--line-height-normal);
+    margin-bottom: var(--space-1);
+  }
+
+  .approval-actions {
+    display: flex;
+    gap: var(--space-2);
+    flex-wrap: wrap;
+    margin-top: var(--space-4);
+  }
+
+  .role-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+  <!-- Header Stats -->
+  <div class="dashboard-grid">
+    <div class="stat-card warning">
+      <div class="stat-header">
+        <div class="stat-icon">
+          <i class="fas fa-user-clock"></i>
+        </div>
+      </div>
+      <div class="stat-value">{{ total_pending }}</div>
+      <div class="stat-label">Pending User Registrations</div>
+    </div>
+  </div>
+
+  <div class="section-header">
+    <h2 class="section-title">Review & Approve</h2>
+    <div style="display:flex;gap:var(--space-2);align-items:center;">
+      <a href="{% url 'admin_dashboard' %}" class="btn btn-ghost btn-sm">
+        <i class="fas fa-arrow-left"></i> Admin Dashboard
+      </a>
+    </div>
+  </div>
+
+  {% if pending_users %}
+    <div class="approval-grid">
+      {% for user in pending_users %}
+        <div class="card approval-card">
+          <div class="meta-row">
+            <div class="name">{{ user.get_full_name }}</div>
+            {% if user.is_student %}
+              <span class="badge badge-primary role-badge">
+                <i class="fas fa-user-graduate"></i> Student
+              </span>
+            {% elif user.is_lecturer %}
+              <span class="badge badge-success role-badge">
+                <i class="fas fa-chalkboard-teacher"></i> Lecturer
+              </span>
+            {% endif %}
+            {% if user.honorific %}
+              <span class="badge badge-secondary">{{ user.honorific }}</span>
+            {% endif %}
+          </div>
+
+          <div class="detail">
+            <i class="fas fa-envelope" style="margin-right: var(--space-1);"></i> {{ user.email|default:"N/A" }}
+          </div>
+          {% if user.phone %}
+            <div class="detail">
+              <i class="fas fa-phone" style="margin-right: var(--space-1);"></i> {{ user.phone }}
+            </div>
+          {% endif %}
+
+          {% if user.is_student %}
+            <div style="margin-top: var(--space-2);">
+              <div class="detail"><strong>Matric:</strong> {{ user.matric_number|default:"N/A" }}</div>
+              <div class="detail">
+                <strong>Level:</strong> {{ user.student.level|default:"N/A" }}
+              </div>
+              <div class="detail">
+                <strong>Program:</strong> {{ user.student.program|default:"N/A" }}
+              </div>
+            </div>
+          {% elif user.is_lecturer %}
+            <div style="margin-top: var(--space-2);">
+              <div class="detail"><strong>Department:</strong> {{ user.address|default:"N/A" }}</div>
+              <div class="detail"><strong>Gender:</strong> {{ user.gender|default:"N/A" }}</div>
+            </div>
+          {% endif %}
+
+          <div class="approval-actions">
+            <a
+              href="{% url 'approve_user' user.pk %}"
+              class="btn btn-primary btn-sm"
+              onclick="return confirm('Approve {{ user.get_full_name }}? A passcode will be generated and emailed.')"
+            >
+              <i class="fas fa-check"></i> Approve
+            </a>
+            <a
+              href="{% url 'reject_user' user.pk %}"
+              class="btn btn-danger btn-sm"
+              onclick="return confirm('Reject {{ user.get_full_name }}? This action cannot be undone.')"
+            >
+              <i class="fas fa-times"></i> Reject
+            </a>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="empty-state">
+      <i class="fas fa-check-circle"></i>
+      <p>No pending approvals found.</p>
+      <p style="margin-top: var(--space-2);">
+        <a href="{% url 'admin_dashboard' %}" class="btn btn-primary btn-sm">
+          <i class="fas fa-arrow-left"></i> Back to Dashboard
+        </a>
+      </p>
+    </div>
+  {% endif %}
+{% endblock %}
+

@@ -160,12 +160,38 @@ def custom_login(request):
     if role == "student":
         qs = User.objects.filter(is_student=True, is_active=True, approval_status="approved")
         fail_url = reverse("student_login")
+        pending_candidates = User.objects.filter(
+            is_student=True,
+            is_active=False,
+        ).exclude(is_superuser=True)
     elif role == "lecturer":
         qs = User.objects.filter(is_lecturer=True, is_active=True, approval_status="approved")
         fail_url = reverse("lecturer_login")
+        pending_candidates = User.objects.filter(
+            is_lecturer=True,
+            is_active=False,
+        ).exclude(is_superuser=True)
     else:
         messages.error(request, "Invalid role. Please start again.")
         return redirect("welcome")
+
+    # Explicit UX: show a clear "Awaiting Approval" state instead of generic login failure.
+    for candidate in pending_candidates:
+        if candidate.get_full_name == full_name:
+            if candidate.approval_status == "pending":
+                request.session["login_error"] = (
+                    "Your account is awaiting Admin approval. "
+                    "Once approved, you'll receive a passcode via email."
+                )
+            elif candidate.approval_status == "rejected":
+                request.session["login_error"] = (
+                    "Your registration was rejected. Please contact the GSMS Admin for next steps."
+                )
+            else:
+                request.session["login_error"] = (
+                    "Your account cannot be used yet. Please contact the GSMS Admin."
+                )
+            return redirect(fail_url)
 
     user = None
     for u in qs:
@@ -255,7 +281,7 @@ def pending_approvals(request):
         "title": "Pending Approvals",
         "total_pending": pending_users.count(),
     }
-    return render(request, "accounts/pending_approvals.html", context)
+    return render(request, "accounts/pending_approvals_apple.html", context)
 
 
 @login_required
@@ -514,7 +540,7 @@ def lecturer_dashboard(request):
         "total_courses": allocated_courses.count(),
     }
     
-    return render(request, "accounts/lecturer_dashboard.html", context)
+    return render(request, "accounts/lecturer_dashboard_apple.html", context)
 
 
 @login_required
@@ -567,7 +593,7 @@ def student_dashboard(request):
         "total_courses": registered_courses.count(),
     }
     
-    return render(request, "accounts/student_dashboard.html", context)
+    return render(request, "accounts/student_dashboard_apple.html", context)
 
 
 # ########################################################
@@ -654,7 +680,7 @@ def edit_staff(request, pk):
 class LecturerFilterView(FilterView):
     filterset_class = LecturerFilter
     queryset = User.objects.filter(is_lecturer=True)
-    template_name = "accounts/lecturer_list.html"
+    template_name = "accounts/lecturer_list_apple.html"
     paginate_by = 10
 
     def get_context_data(self, **kwargs):
@@ -740,7 +766,7 @@ def edit_student(request, pk):
 class StudentListView(FilterView):
     queryset = Student.objects.all()
     filterset_class = StudentFilter
-    template_name = "accounts/student_list.html"
+    template_name = "accounts/student_list_apple.html"
     paginate_by = 10
 
     def get_context_data(self, **kwargs):

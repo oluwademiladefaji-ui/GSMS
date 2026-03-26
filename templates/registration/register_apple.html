@@ -316,7 +316,8 @@
         // Update URL without reload
         const url = new URL(window.location);
         url.searchParams.set('role', role);
-        window.history.pushState({}, '', url);
+        // Use replaceState to avoid polluting history (back-button should go 1 step back).
+        window.history.replaceState({}, '', url);
     }
 </script>
 </body>

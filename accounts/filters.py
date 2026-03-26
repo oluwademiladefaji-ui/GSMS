@@ -17,13 +17,13 @@ class LecturerFilter(django_filters.FilterSet):
 
         # Change html classes and placeholders
         self.filters["username"].field.widget.attrs.update(
-            {"class": "au-input", "placeholder": "ID No."}
+            {"class": "form-control", "placeholder": "ID No."}
         )
         self.filters["name"].field.widget.attrs.update(
-            {"class": "au-input", "placeholder": "Name"}
+            {"class": "form-control", "placeholder": "Name"}
         )
         self.filters["email"].field.widget.attrs.update(
-            {"class": "au-input", "placeholder": "Email"}
+            {"class": "form-control", "placeholder": "Email"}
         )
 
     def filter_by_name(self, queryset, name, value):
@@ -60,16 +60,16 @@ class StudentFilter(django_filters.FilterSet):
 
         # Change html classes and placeholders
         self.filters["id_no"].field.widget.attrs.update(
-            {"class": "au-input", "placeholder": "ID No."}
+            {"class": "form-control", "placeholder": "ID No."}
         )
         self.filters["name"].field.widget.attrs.update(
-            {"class": "au-input", "placeholder": "Name"}
+            {"class": "form-control", "placeholder": "Name"}
         )
         self.filters["email"].field.widget.attrs.update(
-            {"class": "au-input", "placeholder": "Email"}
+            {"class": "form-control", "placeholder": "Email"}
         )
         self.filters["program"].field.widget.attrs.update(
-            {"class": "au-input", "placeholder": "Program"}
+            {"class": "form-control", "placeholder": "Program"}
         )
 
     def filter_by_name(self, queryset, name, value):

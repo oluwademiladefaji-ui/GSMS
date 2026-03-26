@@ -207,8 +207,8 @@ EMAIL_USE_SSL = False
 CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
 CRISPY_TEMPLATE_PACK = "bootstrap5"
 
-LOGIN_URL = "/accounts/login/"
-LOGIN_REDIRECT_URL = "/dashboard/"
+LOGIN_URL = "/accounts/role-selection/?mode=login"
+LOGIN_REDIRECT_URL = "/accounts/dashboard/admin/"
 LOGOUT_REDIRECT_URL = "/accounts/welcome/"
 
 # Admin credentials (hardcoded for security)

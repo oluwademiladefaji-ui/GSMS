@@ -1,0 +1,180 @@
+{% extends 'base_apple.html' %}
+{% load i18n static %}
+
+{% block title %}Lecturers — GSMS{% endblock %}
+{% block page_title %}Lecturers{% endblock %}
+{% block nav_lecturers %}active{% endblock %}
+
+{% block extra_css %}
+<style>
+  .section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--space-4);
+    gap: var(--space-3);
+  }
+
+  .section-title {
+    font-size: var(--font-size-2xl);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-primary);
+    margin: 0;
+  }
+
+  .filter-card {
+    margin-bottom: var(--space-4);
+    padding: var(--space-4);
+  }
+
+  .filter-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    align-items: flex-end;
+  }
+
+  .filter-field {
+    min-width: 200px;
+    flex: 1;
+  }
+
+  .directory-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: var(--space-4);
+  }
+
+  .directory-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    align-items: center;
+    margin-bottom: var(--space-2);
+  }
+
+  .directory-detail {
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-sm);
+    margin-bottom: var(--space-1);
+  }
+
+  .directory-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin-top: var(--space-4);
+  }
+
+  .directory-actions a.btn {
+    min-width: 140px;
+    justify-content: center;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+  <div class="section-header">
+    <h2 class="section-title">
+      <i class="fas fa-chalkboard-teacher" style="margin-right: var(--space-2); color: var(--color-primary);"></i>
+      Lecturers
+    </h2>
+    {% if request.user.is_superuser %}
+      <div style="display:flex;gap:var(--space-2);flex-wrap:wrap;align-items:center;">
+        <a href="{% url 'add_lecturer' %}" class="btn btn-primary btn-sm">
+          <i class="fas fa-plus"></i> Add Lecturer
+        </a>
+        <a href="{% url 'lecturer_list_pdf' %}" class="btn btn-secondary btn-sm" target="_blank" rel="noopener">
+          <i class="fas fa-download"></i> Download PDF
+        </a>
+      </div>
+    {% endif %}
+  </div>
+
+  {% if filter.form %}
+    <div class="card filter-card">
+      <form action="" method="get">
+        <div class="filter-row">
+          {% for field in filter.form %}
+            <div class="filter-field">
+              {{ field }}
+            </div>
+          {% endfor %}
+          <button class="btn btn-primary btn-sm" type="submit">
+            <i class="fas fa-sliders"></i> Filter
+          </button>
+        </div>
+      </form>
+    </div>
+  {% endif %}
+
+  {% if filter.qs %}
+    <div class="directory-grid">
+      {% for lecturer in filter.qs %}
+        <div class="card">
+          <div class="directory-meta">
+            <span class="badge badge-primary">
+              <i class="fas fa-id-badge"></i> {{ lecturer.username }}
+            </span>
+            {% if lecturer.get_gender_display %}
+              <span class="badge badge-secondary">{{ lecturer.get_gender_display }}</span>
+            {% endif %}
+          </div>
+
+          <div style="font-size: var(--font-size-lg); font-weight: var(--font-weight-semibold); color: var(--color-text-primary); margin-bottom: var(--space-2);">
+            {{ lecturer.get_full_name }}
+          </div>
+
+          <div class="directory-detail">
+            <i class="fas fa-envelope" style="margin-right: var(--space-1);"></i>
+            {{ lecturer.email|default:"N/A" }}
+          </div>
+
+          <div class="directory-detail">
+            <i class="fas fa-phone" style="margin-right: var(--space-1);"></i>
+            {{ lecturer.phone|default:"N/A" }}
+          </div>
+
+          <div class="directory-detail">
+            <i class="fas fa-location-dot" style="margin-right: var(--space-1);"></i>
+            {{ lecturer.address|default:"N/A" }}
+          </div>
+
+          <div class="directory-detail">
+            <i class="fas fa-clock" style="margin-right: var(--space-1);"></i>
+            {% if lecturer.last_login %}{{ lecturer.last_login|date:"M d, Y" }}{% else %}Never{% endif %}
+          </div>
+
+          <div class="directory-actions">
+            <a href="{% url 'profile_single' lecturer.id %}" class="btn btn-secondary btn-sm">
+              <i class="fas fa-eye"></i> View
+            </a>
+            <a href="{% url 'staff_edit' pk=lecturer.pk %}" class="btn btn-ghost btn-sm">
+              <i class="fas fa-pen"></i> Edit
+            </a>
+            <a href="{% url 'profile_single' lecturer.id %}?download_pdf=1" class="btn btn-secondary btn-sm" target="_blank" rel="noopener">
+              <i class="fas fa-download"></i> PDF
+            </a>
+            <a href="{% url 'lecturer_delete' pk=lecturer.pk %}" class="btn btn-danger btn-sm"
+               onclick="return confirm('Delete {{ lecturer.get_full_name }}?');">
+              <i class="fas fa-trash"></i> Delete
+            </a>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="empty-state">
+      <i class="fas fa-users"></i>
+      <p>No lecturers found.</p>
+      {% if request.user.is_superuser %}
+        <p style="margin-top: var(--space-2);">
+          <a href="{% url 'add_lecturer' %}" class="btn btn-primary btn-sm">
+            <i class="fas fa-plus"></i> Add Lecturer
+          </a>
+        </p>
+      {% endif %}
+    </div>
+  {% endif %}
+{% endblock %}
+

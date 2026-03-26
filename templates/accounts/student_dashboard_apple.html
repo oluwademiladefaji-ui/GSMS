@@ -1,0 +1,245 @@
+{% extends 'base_apple.html' %}
+{% load static %}
+
+{% block title %}Student Dashboard — GSMS{% endblock %}
+{% block page_title %}Student Dashboard{% endblock %}
+{% block nav_dashboard_s %}active{% endblock %}
+
+{% block extra_css %}
+<style>
+  .dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: var(--space-4);
+    margin-bottom: var(--space-5);
+  }
+
+  .stat-card {
+    background: var(--color-bg-primary);
+    border-radius: var(--radius-lg);
+    padding: var(--space-4);
+    box-shadow: var(--shadow-sm);
+    transition: all var(--transition-base);
+    border-left: 4px solid transparent;
+  }
+
+  .stat-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-md);
+  }
+
+  .stat-card.success { border-left-color: var(--color-success); }
+  .stat-card.info { border-left-color: var(--color-info); }
+  .stat-card.warning { border-left-color: var(--color-warning); }
+
+  .stat-value {
+    font-size: var(--font-size-4xl);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text-primary);
+    line-height: 1;
+    margin-bottom: var(--space-1);
+  }
+
+  .stat-label {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+    font-weight: var(--font-weight-medium);
+  }
+
+  .session-card {
+    background: var(--color-primary-light);
+    border-radius: var(--radius-md);
+    padding: var(--space-4);
+    margin-bottom: var(--space-4);
+    display: flex;
+    gap: var(--space-3);
+    align-items: center;
+  }
+
+  .session-card i {
+    color: var(--color-primary);
+    font-size: 1.25rem;
+  }
+
+  .section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--space-4);
+    gap: var(--space-3);
+  }
+
+  .section-title {
+    font-size: var(--font-size-2xl);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-primary);
+    margin: 0;
+  }
+
+  .course-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: var(--space-4);
+  }
+
+  .course-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    align-items: center;
+    margin-bottom: var(--space-2);
+  }
+
+  .course-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin-top: var(--space-4);
+  }
+
+  .course-actions a.btn {
+    flex: 1;
+    min-width: 140px;
+    justify-content: center;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+  {% if current_session or current_semester %}
+    <div class="session-card">
+      <i class="fas fa-calendar-check"></i>
+      <div>
+        <div class="stat-label" style="text-transform:uppercase;letter-spacing:0.05em;">
+          Current Academic Period
+        </div>
+        <div style="font-size: var(--font-size-lg); font-weight: var(--font-weight-semibold); color: var(--color-text-primary); margin-top: var(--space-1);">
+          {% if current_session %}{{ current_session.session }}{% endif %}
+          {% if current_session and current_semester %} — {% endif %}
+          {% if current_semester %}{{ current_semester.get_semester_display }} Semester{% endif %}
+        </div>
+      </div>
+    </div>
+  {% endif %}
+
+  <div class="dashboard-grid">
+    <div class="stat-card success">
+      <div class="stat-value">{{ total_courses }}</div>
+      <div class="stat-label">Registered Courses</div>
+    </div>
+
+    <div class="stat-card info">
+      <div class="stat-value">{{ current_courses.count }}</div>
+      <div class="stat-label">Current Semester Courses</div>
+    </div>
+
+    <div class="stat-card warning">
+      {% if latest_results %}
+        <div class="stat-value">{{ latest_results.0.gpa|default:"N/A" }}</div>
+        <div class="stat-label">Latest GPA</div>
+      {% else %}
+        <div class="stat-value">N/A</div>
+        <div class="stat-label">Latest GPA</div>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="section-header">
+    <h2 class="section-title">My Courses (Current Semester)</h2>
+    <div style="display:flex;gap:var(--space-2);align-items:center;">
+      <a href="{% url 'course_registration' %}" class="btn btn-secondary btn-sm">
+        <i class="fas fa-plus"></i> Register
+      </a>
+      <a href="{% url 'user_course_list' %}" class="btn btn-ghost btn-sm">
+        <i class="fas fa-arrow-right"></i> View All
+      </a>
+    </div>
+  </div>
+
+  {% if current_courses %}
+    <div class="course-grid">
+      {% for taken_course in current_courses %}
+        <div class="card">
+          <div class="course-meta">
+            <span class="badge badge-primary">
+              <i class="fas fa-layer-group"></i> {{ taken_course.course.code }}
+            </span>
+            <span class="badge badge-secondary">
+              <i class="fas fa-calendar"></i> {{ taken_course.course.semester }}
+            </span>
+          </div>
+
+          <div style="font-size: var(--font-size-lg); font-weight: var(--font-weight-semibold); color: var(--color-text-primary); margin-bottom: var(--space-2);">
+            {{ taken_course.course.title }}
+          </div>
+
+          <div style="color: var(--color-text-secondary); font-size: var(--font-size-sm); margin-bottom: var(--space-2);">
+            <i class="fas fa-graduation-cap" style="margin-right: var(--space-1);"></i> {{ taken_course.course.level }} • {{ taken_course.course.credit }} Credits
+          </div>
+
+          {% if taken_course.grade %}
+            <div style="margin-top: var(--space-2); display:flex; flex-wrap:wrap; gap: var(--space-2);">
+              <span class="badge badge-success">
+                <i class="fas fa-star"></i> Grade: {{ taken_course.grade }}
+              </span>
+              <span class="badge badge-secondary">
+                <i class="fas fa-percentage"></i> Score: {{ taken_course.total }}/100
+              </span>
+            </div>
+          {% else %}
+            <div style="margin-top: var(--space-2); color: var(--color-text-tertiary); font-size: var(--font-size-sm);">
+              <i class="fas fa-clock" style="margin-right: var(--space-1);"></i> Scores will appear when you complete assessments.
+            </div>
+          {% endif %}
+
+          <div class="course-actions">
+            <a href="{% url 'course_detail' taken_course.course.slug %}" class="btn btn-secondary btn-sm">
+              <i class="fas fa-book-open"></i> Materials
+            </a>
+            <a href="{% url 'quiz_index' taken_course.course.slug %}" class="btn btn-ghost btn-sm">
+              <i class="fas fa-list-check"></i> Quizzes
+            </a>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="empty-state">
+      <i class="fas fa-book-open"></i>
+      <p>No courses registered for the current semester.</p>
+      <p style="margin-top: var(--space-2);">
+        <a href="{% url 'course_registration' %}" class="btn btn-primary btn-sm">
+          <i class="fas fa-plus"></i> Register Courses
+        </a>
+      </p>
+    </div>
+  {% endif %}
+
+  <div style="margin-top: var(--space-6);">
+    <div class="section-header">
+      <h2 class="section-title">Latest Results</h2>
+      <a href="{% url 'grade_results' %}" class="btn btn-ghost btn-sm">
+        <i class="fas fa-arrow-right"></i> View All
+      </a>
+    </div>
+
+    {% if latest_results %}
+      <div class="dashboard-grid" style="margin-bottom:0;">
+        <div class="stat-card success">
+          <div class="stat-value">{{ latest_results.0.gpa|default:"N/A" }}</div>
+          <div class="stat-label">GPA</div>
+        </div>
+        <div class="stat-card info">
+          <div class="stat-value">{{ latest_results.0.cgpa|default:"N/A" }}</div>
+          <div class="stat-label">CGPA</div>
+        </div>
+      </div>
+    {% else %}
+      <div class="empty-state">
+        <i class="fas fa-inbox"></i>
+        <p>No results available yet.</p>
+      </div>
+    {% endif %}
+  </div>
+{% endblock %}
+
