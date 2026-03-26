@@ -15,13 +15,11 @@ from .models import NewsAndEvents, ActivityLog, Session, Semester
 def home_view(request):
     """Unified entry point. Redirects to appropriate role dashboard."""
     if request.user.is_superuser:
-        return redirect("dashboard")
+        return redirect("admin_dashboard")
     elif request.user.is_lecturer:
-        # Redirect or render lecturer dashboard
-        return render(request, "core/lecturer_dashboard.html", {"title": "Lecturer Dashboard"})
+        return redirect("lecturer_dashboard")
     elif request.user.is_student:
-        # Redirect or render student dashboard
-        return render(request, "core/student_dashboard.html", {"title": "Student Dashboard"})
+        return redirect("student_dashboard")
     
     # Fallback to news feed if no specific role
     items = NewsAndEvents.objects.all().order_by("-updated_date")

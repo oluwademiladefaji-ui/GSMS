@@ -301,7 +301,7 @@ def approve_user(request, pk):
             f"Babcock University – General Studies Office"
         )
         send_mail(subject, body, settings.DEFAULT_FROM_EMAIL, [user.email], fail_silently=True)
-        email_note = f"Passcode emailed to {user.email}."
+        email_note = f"Passcode generated: <strong>{passcode}</strong> (Emailed to {user.email})."
     except Exception:
         email_note = f"Email could not be sent. Passcode: <strong>{passcode}</strong> — share manually."
 
