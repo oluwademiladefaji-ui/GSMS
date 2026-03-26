@@ -1,0 +1,444 @@
+{% load static i18n %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}GSMS — Babcock University{% endblock %}</title>
+    <meta name="description" content="{% block meta_description %}General Studies Management System — Babcock University{% endblock %}">
+    
+    <!-- Favicon -->
+    <link rel="icon" href="{% static 'img/favicon.png' %}" type="image/png">
+    
+    <!-- Preconnect for Performance -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    
+    <!-- Apple Design System CSS -->
+    <link rel="stylesheet" href="{% static 'css/apple-design-system.css' %}">
+    <link rel="stylesheet" href="{% static 'vendor/fontawesome-6.5.1/css/all.min.css' %}">
+    
+    {% block extra_css %}{% endblock %}
+    
+    <style>
+        /* App Shell Layout */
+        .app-shell {
+            display: flex;
+            min-height: 100vh;
+            background: var(--color-bg-secondary);
+        }
+
+        /* Sidebar Styles */
+        .sidebar {
+            width: 260px;
+            background: var(--color-bg-primary);
+            border-right: 1px solid var(--color-border-light);
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            height: 100vh;
+            left: 0;
+            top: 0;
+            z-index: var(--z-fixed);
+            transition: transform var(--transition-base);
+        }
+
+        .sidebar-logo {
+            padding: var(--space-4);
+            border-bottom: 1px solid var(--color-border-light);
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+        }
+
+        .sidebar-logo-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--color-primary), #0051D5);
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.25rem;
+        }
+
+        .sidebar-logo-text {
+            font-size: var(--font-size-lg);
+            font-weight: var(--font-weight-semibold);
+            color: var(--color-text-primary);
+            line-height: 1.2;
+        }
+
+        .sidebar-logo-text small {
+            display: block;
+            font-size: var(--font-size-xs);
+            font-weight: var(--font-weight-normal);
+            color: var(--color-text-secondary);
+            margin-top: 2px;
+        }
+
+        .sidebar-nav {
+            flex: 1;
+            overflow-y: auto;
+            padding: var(--space-3);
+        }
+
+        .sidebar-section-label {
+            display: block;
+            font-size: var(--font-size-xs);
+            font-weight: var(--font-weight-semibold);
+            color: var(--color-text-tertiary);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin: var(--space-3) 0 var(--space-1);
+        }
+
+        .sidebar-section-label:first-child {
+            margin-top: 0;
+        }
+
+        .sidebar-item {
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+            padding: 0.625rem var(--space-2);
+            color: var(--color-text-secondary);
+            font-size: var(--font-size-sm);
+            font-weight: var(--font-weight-medium);
+            border-radius: var(--radius-md);
+            transition: all var(--transition-fast);
+            text-decoration: none;
+            margin-bottom: 2px;
+        }
+
+        .sidebar-item:hover {
+            background: var(--color-bg-secondary);
+            color: var(--color-text-primary);
+        }
+
+        .sidebar-item.active {
+            background: var(--color-primary-light);
+            color: var(--color-primary);
+        }
+
+        .sidebar-item i {
+            width: 20px;
+            text-align: center;
+            font-size: 1rem;
+        }
+
+        .sidebar-footer {
+            padding: var(--space-3);
+            border-top: 1px solid var(--color-border-light);
+        }
+
+        /* Main Content Area */
+        .main-content {
+            flex: 1;
+            margin-left: 260px;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        /* Top Bar */
+        .topbar {
+            background: var(--color-bg-primary);
+            border-bottom: 1px solid var(--color-border-light);
+            padding: var(--space-3) var(--space-4);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: var(--z-sticky);
+            backdrop-filter: blur(20px);
+            background: rgba(255, 255, 255, 0.8);
+        }
+
+        .menu-toggle {
+            display: none;
+            width: 40px;
+            height: 40px;
+            border: none;
+            background: transparent;
+            color: var(--color-text-primary);
+            font-size: 1.25rem;
+            cursor: pointer;
+            border-radius: var(--radius-md);
+            transition: background var(--transition-fast);
+        }
+
+        .menu-toggle:hover {
+            background: var(--color-bg-secondary);
+        }
+
+        .topbar-title {
+            font-size: var(--font-size-xl);
+            font-weight: var(--font-weight-semibold);
+            color: var(--color-text-primary);
+        }
+
+        .topbar-actions {
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+        }
+
+        .avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--color-primary), #0051D5);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: var(--font-size-sm);
+            font-weight: var(--font-weight-semibold);
+            cursor: pointer;
+            transition: transform var(--transition-fast);
+        }
+
+        .avatar:hover {
+            transform: scale(1.05);
+        }
+
+        /* Page Body */
+        .page-body {
+            flex: 1;
+            padding: var(--space-4);
+        }
+
+        /* Mobile Sidebar Overlay */
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: calc(var(--z-fixed) - 1);
+            opacity: 0;
+            transition: opacity var(--transition-base);
+        }
+
+        .sidebar-overlay.active {
+            opacity: 1;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+
+            .sidebar.open {
+                transform: translateX(0);
+            }
+
+            .main-content {
+                margin-left: 0;
+            }
+
+            .menu-toggle {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            .sidebar-overlay {
+                display: block;
+            }
+
+            .topbar-title {
+                font-size: var(--font-size-lg);
+            }
+
+            .page-body {
+                padding: var(--space-3);
+            }
+        }
+
+        /* Alert Styles */
+        .alert {
+            position: relative;
+            padding-right: var(--space-6);
+        }
+
+        .alert i {
+            margin-right: var(--space-1);
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-shell">
+
+    <!-- ═══════════════════════════════════════════════════════════
+         SIDEBAR NAVIGATION
+         ═══════════════════════════════════════════════════════════ -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-logo">
+            <div class="sidebar-logo-icon">
+                <i class="fas fa-graduation-cap"></i>
+            </div>
+            <div class="sidebar-logo-text">
+                GSMS
+                <small>Babcock University</small>
+            </div>
+        </div>
+
+        <nav class="sidebar-nav">
+            {% if request.user.is_superuser %}
+                <!-- Admin Navigation -->
+                <span class="sidebar-section-label">Admin</span>
+                <a href="{% url 'admin_dashboard' %}" class="sidebar-item {% block nav_dashboard %}{% endblock %}">
+                    <i class="fas fa-th-large"></i> Dashboard
+                </a>
+                <a href="{% url 'pending_approvals' %}" class="sidebar-item {% block nav_approvals %}{% endblock %}">
+                    <i class="fas fa-user-clock"></i> Pending Approvals
+                </a>
+                <a href="{% url 'lecturer_list' %}" class="sidebar-item {% block nav_lecturers %}{% endblock %}">
+                    <i class="fas fa-chalkboard-teacher"></i> Lecturers
+                </a>
+                <a href="{% url 'student_list' %}" class="sidebar-item {% block nav_students %}{% endblock %}">
+                    <i class="fas fa-user-graduate"></i> Students
+                </a>
+                
+                <span class="sidebar-section-label">Academic</span>
+                <a href="{% url 'programs' %}" class="sidebar-item {% block nav_programs %}{% endblock %}">
+                    <i class="fas fa-layer-group"></i> Programs
+                </a>
+                <a href="{% url 'course_allocation_view' %}" class="sidebar-item {% block nav_allocations %}{% endblock %}">
+                    <i class="fas fa-link"></i> Course Allocation
+                </a>
+
+                <span class="sidebar-section-label">System</span>
+                <a href="{% url 'session_list' %}" class="sidebar-item {% block nav_sessions %}{% endblock %}">
+                    <i class="fas fa-calendar-alt"></i> Sessions
+                </a>
+                <a href="{% url 'semester_list' %}" class="sidebar-item {% block nav_semesters %}{% endblock %}">
+                    <i class="fas fa-clock"></i> Semesters
+                </a>
+
+            {% elif request.user.is_lecturer %}
+                <!-- Lecturer Navigation -->
+                <span class="sidebar-section-label">Lecturer</span>
+                <a href="{% url 'lecturer_dashboard' %}" class="sidebar-item {% block nav_dashboard_l %}{% endblock %}">
+                    <i class="fas fa-th-large"></i> Dashboard
+                </a>
+                <a href="{% url 'user_course_list' %}" class="sidebar-item {% block nav_courses_l %}{% endblock %}">
+                    <i class="fas fa-book-open"></i> My Courses
+                </a>
+                <a href="{% url 'add_score' %}" class="sidebar-item {% block nav_scores %}{% endblock %}">
+                    <i class="fas fa-pencil-alt"></i> Enter Scores
+                </a>
+
+            {% elif request.user.is_student %}
+                <!-- Student Navigation -->
+                <span class="sidebar-section-label">Student</span>
+                <a href="{% url 'student_dashboard' %}" class="sidebar-item {% block nav_dashboard_s %}{% endblock %}">
+                    <i class="fas fa-th-large"></i> Dashboard
+                </a>
+                <a href="{% url 'course_registration' %}" class="sidebar-item {% block nav_registration %}{% endblock %}">
+                    <i class="fas fa-clipboard-list"></i> Course Registration
+                </a>
+                <a href="{% url 'user_course_list' %}" class="sidebar-item {% block nav_courses_s %}{% endblock %}">
+                    <i class="fas fa-book-open"></i> My Courses
+                </a>
+                <a href="{% url 'grade_results' %}" class="sidebar-item {% block nav_results_s %}{% endblock %}">
+                    <i class="fas fa-chart-bar"></i> Results
+                </a>
+            {% endif %}
+        </nav>
+
+        <!-- User Info Footer -->
+        <div class="sidebar-footer">
+            <a href="{% url 'edit_profile' %}" class="sidebar-item">
+                <i class="fas fa-user-circle"></i>
+                <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+                    {{ request.user.get_full_name }}
+                </span>
+            </a>
+            <a href="{% url 'logout' %}" class="sidebar-item" style="color: var(--color-error);">
+                <i class="fas fa-sign-out-alt"></i> Log Out
+            </a>
+        </div>
+    </aside>
+
+    <!-- Mobile Sidebar Overlay -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- ═══════════════════════════════════════════════════════════
+         MAIN CONTENT AREA
+         ═══════════════════════════════════════════════════════════ -->
+    <div class="main-content">
+
+        <!-- Top Bar -->
+        <header class="topbar">
+            <div style="display: flex; align-items: center; gap: var(--space-2);">
+                <button class="menu-toggle" id="menuToggle" aria-label="Toggle menu">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <span class="topbar-title">{% block page_title %}Dashboard{% endblock %}</span>
+            </div>
+            <div class="topbar-actions">
+                {% if request.user.is_superuser %}
+                    <span class="badge badge-warning">Admin</span>
+                {% elif request.user.is_lecturer %}
+                    <span class="badge badge-primary">Lecturer</span>
+                {% elif request.user.is_student %}
+                    <span class="badge badge-success">Student</span>
+                {% endif %}
+                <div class="avatar" title="{{ request.user.get_full_name }}">
+                    {{ request.user.first_name|first|upper }}{{ request.user.last_name|first|upper }}
+                </div>
+            </div>
+        </header>
+
+        <!-- Flash Messages -->
+        {% if messages %}
+        <div style="padding: var(--space-3) var(--space-4) 0;">
+            {% for message in messages %}
+            <div class="alert alert-{% if message.tags == 'error' %}error{% elif message.tags == 'success' %}success{% elif message.tags == 'warning' %}warning{% else %}info{% endif %}">
+                <i class="fas fa-{% if message.tags == 'success' %}check-circle{% elif message.tags == 'error' or message.tags == 'danger' %}exclamation-circle{% elif message.tags == 'warning' %}exclamation-triangle{% else %}info-circle{% endif %}"></i>
+                <span>{{ message }}</span>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Page Content -->
+        <main class="page-body">
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+</div>
+
+<!-- Apple Interactions JavaScript -->
+<script src="{% static 'js/apple-interactions.js' %}"></script>
+
+<script>
+    // Mobile sidebar toggle
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+    const toggle  = document.getElementById('menuToggle');
+
+    if (toggle) {
+        toggle.addEventListener('click', () => {
+            sidebar.classList.toggle('open');
+            overlay.classList.toggle('active');
+        });
+    }
+
+    if (overlay) {
+        overlay.addEventListener('click', () => {
+            sidebar.classList.remove('open');
+            overlay.classList.remove('active');
+        });
+    }
+</script>
+
+{% block extra_js %}{% endblock %}
+</body>
+</html>

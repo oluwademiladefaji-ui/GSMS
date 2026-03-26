@@ -1,0 +1,304 @@
+{% load static i18n %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome — GSMS Babcock University</title>
+    <meta name="description" content="General Studies Management System — Babcock University">
+    
+    <link rel="icon" href="{% static 'img/favicon.png' %}" type="image/png">
+    <link rel="stylesheet" href="{% static 'css/apple-design-system.css' %}">
+    <link rel="stylesheet" href="{% static 'vendor/fontawesome-6.5.1/css/all.min.css' %}">
+    
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: var(--space-3);
+        }
+
+        .welcome-container {
+            max-width: 1200px;
+            width: 100%;
+        }
+
+        .welcome-hero {
+            text-align: center;
+            color: white;
+            margin-bottom: var(--space-6);
+            animation: fadeIn 0.8s ease;
+        }
+
+        .welcome-logo {
+            width: 80px;
+            height: 80px;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            border-radius: var(--radius-xl);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto var(--space-3);
+            font-size: 2.5rem;
+        }
+
+        .welcome-hero h1 {
+            font-size: var(--font-size-5xl);
+            font-weight: var(--font-weight-bold);
+            margin-bottom: var(--space-2);
+            color: white;
+        }
+
+        .welcome-hero p {
+            font-size: var(--font-size-xl);
+            opacity: 0.9;
+            color: white;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .welcome-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: var(--space-4);
+            margin-bottom: var(--space-6);
+        }
+
+        .welcome-card {
+            background: white;
+            border-radius: var(--radius-xl);
+            padding: var(--space-5);
+            text-align: center;
+            box-shadow: var(--shadow-xl);
+            transition: all var(--transition-base);
+            animation: slideUp 0.8s ease;
+            animation-fill-mode: both;
+        }
+
+        .welcome-card:nth-child(1) { animation-delay: 0.1s; }
+        .welcome-card:nth-child(2) { animation-delay: 0.2s; }
+        .welcome-card:nth-child(3) { animation-delay: 0.3s; }
+
+        .welcome-card:hover {
+            transform: translateY(-8px);
+            box-shadow: var(--shadow-xl), 0 20px 60px rgba(0, 0, 0, 0.2);
+        }
+
+        .welcome-card-icon {
+            width: 64px;
+            height: 64px;
+            margin: 0 auto var(--space-3);
+            background: linear-gradient(135deg, var(--color-primary), #0051D5);
+            border-radius: var(--radius-lg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            color: white;
+        }
+
+        .welcome-card h3 {
+            font-size: var(--font-size-2xl);
+            font-weight: var(--font-weight-semibold);
+            margin-bottom: var(--space-2);
+            color: var(--color-text-primary);
+        }
+
+        .welcome-card p {
+            font-size: var(--font-size-base);
+            color: var(--color-text-secondary);
+            margin-bottom: var(--space-4);
+            line-height: var(--line-height-relaxed);
+        }
+
+        .welcome-card .btn {
+            width: 100%;
+        }
+
+        .welcome-footer {
+            text-align: center;
+            color: white;
+            opacity: 0.8;
+            font-size: var(--font-size-sm);
+        }
+
+        .welcome-footer a {
+            color: white;
+            text-decoration: underline;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(40px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .welcome-hero h1 {
+                font-size: var(--font-size-3xl);
+            }
+
+            .welcome-hero p {
+                font-size: var(--font-size-lg);
+            }
+
+            .welcome-cards {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* News Section */
+        .news-section {
+            background: white;
+            border-radius: var(--radius-xl);
+            padding: var(--space-5);
+            margin-bottom: var(--space-6);
+            box-shadow: var(--shadow-xl);
+            animation: slideUp 0.8s ease 0.4s both;
+        }
+
+        .news-section h2 {
+            font-size: var(--font-size-2xl);
+            font-weight: var(--font-weight-semibold);
+            margin-bottom: var(--space-4);
+            color: var(--color-text-primary);
+        }
+
+        .news-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: var(--space-3);
+        }
+
+        .news-item {
+            padding: var(--space-3);
+            border-radius: var(--radius-md);
+            background: var(--color-bg-secondary);
+            transition: all var(--transition-fast);
+        }
+
+        .news-item:hover {
+            background: var(--color-bg-tertiary);
+            transform: translateX(4px);
+        }
+
+        .news-item-title {
+            font-size: var(--font-size-base);
+            font-weight: var(--font-weight-semibold);
+            color: var(--color-text-primary);
+            margin-bottom: var(--space-1);
+        }
+
+        .news-item-date {
+            font-size: var(--font-size-sm);
+            color: var(--color-text-tertiary);
+        }
+    </style>
+</head>
+<body>
+
+<div class="welcome-container">
+    <!-- Hero Section -->
+    <div class="welcome-hero">
+        <div class="welcome-logo">
+            <i class="fas fa-graduation-cap"></i>
+        </div>
+        <h1>Welcome to GSMS</h1>
+        <p>Babcock University General Studies Management System</p>
+    </div>
+
+    <!-- Action Cards -->
+    <div class="welcome-cards">
+        <!-- Admin Login -->
+        <div class="welcome-card">
+            <div class="welcome-card-icon">
+                <i class="fas fa-user-shield"></i>
+            </div>
+            <h3>Admin</h3>
+            <p>System administrators can manage users, courses, and oversee all operations.</p>
+            <a href="{% url 'admin_login' %}" class="btn btn-primary">
+                Admin Login
+                <i class="fas fa-arrow-right"></i>
+            </a>
+        </div>
+
+        <!-- Lecturer Portal -->
+        <div class="welcome-card">
+            <div class="welcome-card-icon">
+                <i class="fas fa-chalkboard-teacher"></i>
+            </div>
+            <h3>Lecturer</h3>
+            <p>Access your courses, upload materials, and manage student assessments.</p>
+            <a href="{% url 'lecturer_login' %}" class="btn btn-primary">
+                Lecturer Login
+                <i class="fas fa-arrow-right"></i>
+            </a>
+            <a href="{% url 'register' %}?role=lecturer" class="btn btn-secondary" style="margin-top: var(--space-2);">
+                Sign Up
+            </a>
+        </div>
+
+        <!-- Student Portal -->
+        <div class="welcome-card">
+            <div class="welcome-card-icon">
+                <i class="fas fa-user-graduate"></i>
+            </div>
+            <h3>Student</h3>
+            <p>Register for courses, access learning materials, and view your results.</p>
+            <a href="{% url 'student_login' %}" class="btn btn-primary">
+                Student Login
+                <i class="fas fa-arrow-right"></i>
+            </a>
+            <a href="{% url 'register' %}?role=student" class="btn btn-secondary" style="margin-top: var(--space-2);">
+                Sign Up
+            </a>
+        </div>
+    </div>
+
+    <!-- News & Events Section -->
+    {% if news_items %}
+    <div class="news-section">
+        <h2><i class="fas fa-newspaper"></i> Latest News & Events</h2>
+        <div class="news-grid">
+            {% for item in news_items %}
+            <div class="news-item">
+                <div class="news-item-title">{{ item.title }}</div>
+                <div class="news-item-date">
+                    <i class="fas fa-calendar"></i>
+                    {{ item.updated_date|date:"M d, Y" }}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Footer -->
+    <div class="welcome-footer">
+        <p>&copy; {% now "Y" %} Babcock University. All rights reserved.</p>
+    </div>
+</div>
+
+<script src="{% static 'js/apple-interactions.js' %}"></script>
+</body>
+</html>

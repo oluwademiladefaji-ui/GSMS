@@ -68,7 +68,7 @@ def welcome(request):
         "news_items": news_items,
         "title": "Welcome to Babcock University GSMS",
     }
-    return render(request, "registration/welcome.html", context)
+    return render(request, "registration/welcome_apple.html", context)
 
 
 def role_selection(request):
@@ -108,7 +108,7 @@ def login_view(request):
         "role": role,
         "login_error": request.session.pop("login_error", None),
     }
-    return render(request, "registration/login.html", context)
+    return render(request, "registration/login_apple.html", context)
 
 
 def custom_login(request):
@@ -234,7 +234,7 @@ def register(request):
         student_form = StudentSignupForm()
         staff_form = StaffSignupForm()
     
-    return render(request, "registration/register.html", {
+    return render(request, "registration/register_apple.html", {
         "student_form": student_form,
         "staff_form": staff_form,
         "active_tab": role,
@@ -473,7 +473,7 @@ def admin_dashboard(request):
         "enrollment_data": enrollment_data,
     }
 
-    return render(request, "accounts/admin_dashboard.html", context)
+    return render(request, "accounts/admin_dashboard_apple.html", context)
 
 
 @login_required
